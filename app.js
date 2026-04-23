@@ -88,6 +88,41 @@ const nichtGewusstIds = new Set();
 let editModalMode      = 'edit';
 let editModalStudentId = null;
 
+// collapsible groups
+const openGruppen = new Set();
+function saveOpenGruppen() {
+  localStorage.setItem('openGruppen', JSON.stringify([...openGruppen]));
+}
+function ladeOpenGruppen() {
+  try {
+    const saved = localStorage.getItem('openGruppen');
+    if (saved) JSON.parse(saved).forEach(id => openGruppen.add(id));
+  } catch(e) {}
+}
+
+// group order
+let gruppenReihenfolge = [];
+function saveGruppenReihenfolge() {
+  localStorage.setItem('gruppenReihenfolge', JSON.stringify(gruppenReihenfolge));
+}
+function ladeGruppenReihenfolge() {
+  try {
+    const saved = localStorage.getItem('gruppenReihenfolge');
+    if (saved) gruppenReihenfolge = JSON.parse(saved);
+  } catch(e) {}
+}
+function getSortierteGruppen() {
+  if (!gruppenReihenfolge.length) return [...gruppen];
+  return [...gruppen].sort((a, b) => {
+    const ai = gruppenReihenfolge.indexOf(a.id);
+    const bi = gruppenReihenfolge.indexOf(b.id);
+    if (ai === -1 && bi === -1) return 0;
+    if (ai === -1) return 1;
+    if (bi === -1) return -1;
+    return ai - bi;
+  });
+}
+
 // import buffer
 let importDatenBuffer = null;
 
@@ -189,13 +224,16 @@ function karteItemHtml(s) {
 function renderVerwaltung() {
   // Gruppen-Liste
   const gList = document.getElementById('gruppen-liste');
-  gList.innerHTML = gruppen.length === 0
+  const sortedG = getSortierteGruppen();
+  gList.innerHTML = sortedG.length === 0
     ? '<p class="hinweis" style="padding:0.5rem 0">Noch keine Gruppen.</p>'
-    : gruppen.map(g => `
+    : sortedG.map((g, i) => `
       <div class="gruppe-item">
         <span class="gruppe-dot"></span>
         <span class="gruppe-name">${esc(g.name)}</span>
         <span class="gruppe-count">${gruppeKartenAnzahl(g.id)} Karte(n)</span>
+        <button class="btn-gruppe-move btn-gruppe-up" data-id="${g.id}" title="Nach oben"${i === 0 ? ' style="visibility:hidden"' : ''}>▲</button>
+        <button class="btn-gruppe-move btn-gruppe-down" data-id="${g.id}" title="Nach unten"${i === sortedG.length - 1 ? ' style="visibility:hidden"' : ''}>▼</button>
         <button class="btn-gruppe-ren" data-id="${g.id}" title="Umbenennen">✏️</button>
         <button class="btn-gruppe-del" data-id="${g.id}" title="Löschen">✕</button>
       </div>`).join('');
@@ -204,7 +242,7 @@ function renderVerwaltung() {
   const sel     = document.getElementById('select-gruppe');
   const savedId = localStorage.getItem('lastGruppeId') || sel.value;
   sel.innerHTML = '<option value="">Gruppe wählen…</option>' +
-    gruppen.map(g => `<option value="${g.id}"${g.id === savedId ? ' selected' : ''}>${esc(g.name)}</option>`).join('');
+    getSortierteGruppen().map(g => `<option value="${g.id}"${g.id === savedId ? ' selected' : ''}>${esc(g.name)}</option>`).join('');
 
   // Karten-Anzeige
   const container = document.getElementById('karten-nach-gruppen');
@@ -223,7 +261,10 @@ function renderVerwaltung() {
   const sort      = document.getElementById('select-karten-sort')?.value || 'neu';
   const flach     = suche || sort === 'az' || sort === 'za';
 
+  const toggleBtn = document.getElementById('btn-toggle-alle-gruppen');
+
   if (flach) {
+    if (toggleBtn) toggleBtn.style.visibility = 'hidden';
     if (!gefiltert.length) {
       container.innerHTML = '<p class="hinweis" style="padding:0.5rem 0">Keine Karten gefunden.</p>';
     } else {
@@ -232,10 +273,12 @@ function renderVerwaltung() {
     return;
   }
 
-  // Gruppiert (sort = 'neu' oder 'gruppe')
+  if (toggleBtn) toggleBtn.style.visibility = 'visible';
+
+  // Gruppiert mit aufklappbaren Sektionen
   const sortiertGruppen = sort === 'gruppe'
     ? [...gruppen].sort((a, b) => a.name.localeCompare(b.name, 'de'))
-    : gruppen;
+    : getSortierteGruppen();
 
   const byGruppe = new Map();
   sortiertGruppen.forEach(g => byGruppe.set(g.id, []));
@@ -245,22 +288,37 @@ function renderVerwaltung() {
     else ohneGruppe.push(s);
   });
 
+  function gruppeSection(gid, name, arr) {
+    const isOpen = openGruppen.has(gid);
+    return `<div class="gruppe-karten-section">
+      <div class="gruppe-karten-header" data-gid="${gid}">
+        <span class="gruppe-toggle-arrow">${isOpen ? '▼' : '▶'}</span>
+        <span class="gruppe-karten-title-text">${esc(name)}</span>
+        <span class="gruppe-karten-count">${arr.length} Karte${arr.length !== 1 ? 'n' : ''}</span>
+      </div>
+      <div id="gruppe-body-${gid}" class="gruppe-karten-body${isOpen ? '' : ' hidden'}">
+        ${arr.map(s => karteItemHtml(s)).join('')}
+      </div>
+    </div>`;
+  }
+
   let html = '';
   sortiertGruppen.forEach(g => {
     const arr = byGruppe.get(g.id);
     if (!arr.length) return;
-    html += `<div class="gruppe-karten-section">
-      <div class="gruppe-karten-title">${esc(g.name)}</div>
-      ${arr.map(s => karteItemHtml(s)).join('')}
-    </div>`;
+    html += gruppeSection(g.id, g.name, arr);
   });
   if (ohneGruppe.length) {
-    html += `<div class="gruppe-karten-section">
-      <div class="gruppe-karten-title">Ohne Gruppe</div>
-      ${ohneGruppe.map(s => karteItemHtml(s)).join('')}
-    </div>`;
+    html += gruppeSection('ohne', 'Ohne Gruppe', ohneGruppe);
   }
   container.innerHTML = html || '<p class="hinweis" style="padding:0.5rem 0">Keine Karten gefunden.</p>';
+
+  // Toggle-Button-Text aktualisieren
+  if (toggleBtn) {
+    const anyOpen = sortiertGruppen.some(g => byGruppe.get(g.id)?.length && openGruppen.has(g.id))
+                 || (ohneGruppe.length && openGruppen.has('ohne'));
+    toggleBtn.textContent = anyOpen ? 'Alle schließen' : 'Alle öffnen';
+  }
 }
 
 // ============================================================
@@ -274,7 +332,7 @@ function renderLernAuswahl() {
     document.getElementById('btn-lernen-start').disabled = true;
     return;
   }
-  container.innerHTML = gruppen.map(g => {
+  container.innerHTML = getSortierteGruppen().map(g => {
     const n = gruppeKartenAnzahl(g.id);
     return `
       <div class="gruppe-check-item" data-gid="${g.id}">
@@ -628,10 +686,12 @@ document.getElementById('btn-karte-edit-save').addEventListener('click', async (
     studenten.push(newS);
     toast(`Karte kopiert: „${name}"`);
   } else {
-    const s = studenten.find(x => x.id === editModalStudentId);
+    const s    = studenten.find(x => x.id === editModalStudentId);
+    const foto = s.foto;        // Blob-Referenz sichern (Safari-Bug: dbPut kann Blob invalidieren)
     s.name     = name;
     s.gruppeId = gruppeId;
     await dbPut('studenten', s);
+    s.foto = foto;              // Referenz wiederherstellen
     toast(`Karte aktualisiert: „${name}"`);
   }
   document.getElementById('karte-edit-modal').classList.add('hidden');
@@ -654,8 +714,36 @@ document.getElementById('input-neue-gruppe').addEventListener('keydown', e => {
   if (e.key === 'Enter') document.getElementById('btn-gruppe-add').click();
 });
 
-// Gruppe umbenennen / löschen
+// Gruppe sortieren / umbenennen / löschen
 document.getElementById('gruppen-liste').addEventListener('click', async e => {
+  const upBtn = e.target.closest('.btn-gruppe-up');
+  if (upBtn) {
+    const id = upBtn.dataset.id;
+    const sorted = getSortierteGruppen();
+    const idx = sorted.findIndex(g => g.id === id);
+    if (idx > 0) {
+      const newOrder = sorted.map(g => g.id);
+      [newOrder[idx - 1], newOrder[idx]] = [newOrder[idx], newOrder[idx - 1]];
+      gruppenReihenfolge = newOrder;
+      saveGruppenReihenfolge();
+      renderVerwaltung();
+    }
+    return;
+  }
+  const downBtn = e.target.closest('.btn-gruppe-down');
+  if (downBtn) {
+    const id = downBtn.dataset.id;
+    const sorted = getSortierteGruppen();
+    const idx = sorted.findIndex(g => g.id === id);
+    if (idx < sorted.length - 1) {
+      const newOrder = sorted.map(g => g.id);
+      [newOrder[idx], newOrder[idx + 1]] = [newOrder[idx + 1], newOrder[idx]];
+      gruppenReihenfolge = newOrder;
+      saveGruppenReihenfolge();
+      renderVerwaltung();
+    }
+    return;
+  }
   const renBtn = e.target.closest('.btn-gruppe-ren');
   if (renBtn) {
     const g = gruppen.find(x => x.id === renBtn.dataset.id);
@@ -726,6 +814,44 @@ document.getElementById('form-karte').addEventListener('submit', async e => {
   } finally {
     btn.disabled = false; btn.textContent = 'Karte speichern';
   }
+});
+
+// Gruppe aufklappen / zuklappen
+document.getElementById('karten-nach-gruppen').addEventListener('click', e => {
+  const header = e.target.closest('.gruppe-karten-header');
+  if (!header) return;
+  // Wenn ein Button innerhalb des Headers geklickt wurde, ignorieren
+  if (e.target.closest('button')) return;
+  const gid  = header.dataset.gid;
+  const body = document.getElementById(`gruppe-body-${gid}`);
+  const arrow = header.querySelector('.gruppe-toggle-arrow');
+  if (openGruppen.has(gid)) {
+    openGruppen.delete(gid);
+    body.classList.add('hidden');
+    arrow.textContent = '▶';
+  } else {
+    openGruppen.add(gid);
+    body.classList.remove('hidden');
+    arrow.textContent = '▼';
+  }
+  saveOpenGruppen();
+  // Toggle-Button-Text aktualisieren
+  const anyOpen = [...openGruppen].some(id => document.getElementById(`gruppe-body-${id}`));
+  const tb = document.getElementById('btn-toggle-alle-gruppen');
+  if (tb) tb.textContent = anyOpen ? 'Alle schließen' : 'Alle öffnen';
+});
+
+// Alle öffnen / schließen
+document.getElementById('btn-toggle-alle-gruppen').addEventListener('click', () => {
+  const anyOpen = gruppen.some(g => openGruppen.has(g.id)) || openGruppen.has('ohne');
+  if (anyOpen) {
+    openGruppen.clear();
+  } else {
+    gruppen.forEach(g => openGruppen.add(g.id));
+    openGruppen.add('ohne');
+  }
+  saveOpenGruppen();
+  renderVerwaltung();
 });
 
 // Karte bearbeiten / kopieren / löschen
@@ -890,7 +1016,7 @@ document.getElementById('btn-statistik-loeschen').addEventListener('click', asyn
 document.getElementById('btn-export').addEventListener('click', () => {
   if (!gruppen.length) { toast('Keine Gruppen vorhanden'); return; }
   const container = document.getElementById('export-gruppen-liste');
-  container.innerHTML = gruppen.map(g => `
+  container.innerHTML = getSortierteGruppen().map(g => `
     <div class="gruppe-check-item selected" data-gid="${g.id}">
       <div class="check-box" style="background:var(--accent);border-color:var(--accent);color:#000">✓</div>
       <div class="check-label">
@@ -1077,5 +1203,7 @@ if ('serviceWorker' in navigator) {
 (async () => {
   await dbInit();
   await ladeAlles();
+  ladeOpenGruppen();
+  ladeGruppenReihenfolge();
   renderVerwaltung();
 })();
