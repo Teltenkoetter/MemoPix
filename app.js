@@ -949,11 +949,27 @@ document.getElementById('btn-export-start').addEventListener('click', async () =
     version: 1, exportiert: new Date().toISOString(),
     gruppen: exportGruppen, studenten: studExport
   };
+  // Dateiname: Gruppenname(n) einbauen
+  function sanitize(str) {
+    return str
+      .replace(/[äÄ]/g,'ae').replace(/[öÖ]/g,'oe').replace(/[üÜ]/g,'ue').replace(/ß/g,'ss')
+      .replace(/[^a-zA-Z0-9]/g,'-').replace(/-+/g,'-').replace(/^-|-$/g,'');
+  }
+  const datum = new Date().toISOString().slice(0,10);
+  let gruppenTeil;
+  if (selectedGids.length === gruppen.length) {
+    gruppenTeil = 'alle';
+  } else if (selectedGids.length === 1) {
+    gruppenTeil = sanitize(exportGruppen[0].name);
+  } else {
+    gruppenTeil = `${selectedGids.length}-Gruppen`;
+  }
+
   const blob = new Blob([JSON.stringify(payload)], { type: 'application/json' });
   const url  = URL.createObjectURL(blob);
   Object.assign(document.createElement('a'), {
     href: url,
-    download: `lernkarten-${new Date().toISOString().slice(0,10)}.json`
+    download: `lernkarten-${gruppenTeil}-${datum}.json`
   }).click();
   URL.revokeObjectURL(url);
   document.getElementById('export-modal').classList.add('hidden');
