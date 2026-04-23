@@ -1,4 +1,4 @@
-const CACHE = 'lernkarten-v10';
+const CACHE = 'lernkarten-v11';
 const SHELL = ['./index.html', './style.css', './app.js', './manifest.json', './icon.svg'];
 
 self.addEventListener('install', e => {
@@ -18,4 +18,3 @@ self.addEventListener('fetch', e => {
     caches.match(e.request).then(cached => cached || fetch(e.request))
   );
 });
-

@@ -614,4 +614,3 @@ select option { background: var(--surface2); color: var(--text); }
   transition: opacity 0.3s;
 }
 .toast.hidden { opacity: 0; pointer-events: none; }
-
