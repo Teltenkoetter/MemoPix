@@ -15,7 +15,7 @@
 <body>
 
   <header>
-    <h1>Lernkarten | Personen</h1>
+    <h1><span class="title-bold">Lernkarten</span> <span class="title-light">| Personen</span></h1>
     <button id="btn-info" class="btn-help" title="Hilfe">?</button>
   </header>
 
@@ -23,33 +23,82 @@
   <div id="info-modal" class="modal-backdrop hidden">
     <div class="modal">
       <div class="modal-header">
-        <h2>Bedienung</h2>
+        <h2>Hilfe</h2>
         <button id="btn-info-close" class="btn-modal-close">✕</button>
       </div>
       <div class="modal-body">
-        <div class="anleitung-zeilen">
-          <div class="anleitung-zeile">
-            <span class="anleitung-icon">👆</span>
-            <div class="anleitung-text"><strong>Auf Foto tippen</strong> — Name war bekannt, weiter zur nächsten Karte</div>
-          </div>
-          <div class="anleitung-zeile">
-            <span class="anleitung-icon">🔍</span>
-            <div class="anleitung-text"><strong>„Name zeigen" tippen</strong> — Name war unbekannt, wird eingeblendet</div>
-          </div>
-          <div class="anleitung-zeile">
-            <span class="anleitung-icon">↔️</span>
-            <div class="anleitung-text"><strong>Pfeile</strong> — Karten ohne Wertung vor- und zurückblättern</div>
-          </div>
-          <div class="anleitung-zeile">
-            <span class="anleitung-icon">📊</span>
-            <div class="anleitung-text">Am Ende der Übung: <strong>Trefferquote</strong> und Option zur Wiederholung</div>
-          </div>
-          <div class="anleitung-zeile">
-            <span class="anleitung-icon">💾</span>
-            <div class="anleitung-text">Unter <strong>Sicherung</strong> regelmäßig Backup exportieren</div>
+
+        <div class="modal-section">
+          <div class="modal-section-title">🎴 Lernmodus</div>
+          <div class="anleitung-zeilen">
+            <div class="anleitung-zeile">
+              <span class="anleitung-icon">👆</span>
+              <div class="anleitung-text"><strong>Foto tippen</strong> — Name war bekannt, weiter zur nächsten Karte</div>
+            </div>
+            <div class="anleitung-zeile">
+              <span class="anleitung-icon">🔍</span>
+              <div class="anleitung-text"><strong>„Name zeigen"</strong> — Name war unbekannt, wird eingeblendet</div>
+            </div>
+            <div class="anleitung-zeile">
+              <span class="anleitung-icon">↔️</span>
+              <div class="anleitung-text"><strong>Pfeile</strong> — Karten ohne Wertung vor- und zurückblättern</div>
+            </div>
+            <div class="anleitung-zeile">
+              <span class="anleitung-icon">📊</span>
+              <div class="anleitung-text">Am Ende: <strong>Trefferquote</strong> und Option zur Wiederholung</div>
+            </div>
           </div>
         </div>
-        <p class="modal-meta">Version 1.1 · Klaus Teltenkötter 2026</p>
+
+        <div class="modal-divider"></div>
+
+        <div class="modal-section">
+          <div class="modal-section-title">⚙️ Verwaltung</div>
+          <div class="anleitung-zeilen">
+            <div class="anleitung-zeile">
+              <span class="anleitung-icon">1️⃣</span>
+              <div class="anleitung-text"><strong>Gruppe erstellen</strong> — z.B. „WS 2026 Gruppe A"</div>
+            </div>
+            <div class="anleitung-zeile">
+              <span class="anleitung-icon">2️⃣</span>
+              <div class="anleitung-text"><strong>Karte hinzufügen</strong> — Gruppe wählen, Name eingeben, Foto auswählen</div>
+            </div>
+            <div class="anleitung-zeile">
+              <span class="anleitung-icon">✏️</span>
+              <div class="anleitung-text">Gruppen und Karten können jederzeit <strong>umbenannt oder gelöscht</strong> werden</div>
+            </div>
+            <div class="anleitung-zeile">
+              <span class="anleitung-icon">✂️</span>
+              <div class="anleitung-text">Fotos werden automatisch <strong>mittig quadratisch zugeschnitten</strong> — Gesicht möglichst in der Bildmitte halten</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-divider"></div>
+
+        <div class="modal-section">
+          <div class="modal-section-title">💾 Datenspeicher &amp; Backup</div>
+          <div class="anleitung-zeilen">
+            <div class="anleitung-zeile">
+              <span class="anleitung-icon">📱</span>
+              <div class="anleitung-text">Karten werden <strong>lokal im Browser</strong> gespeichert — kein Server, kein Internet nötig</div>
+            </div>
+            <div class="anleitung-zeile">
+              <span class="anleitung-icon">📤</span>
+              <div class="anleitung-text"><strong>Sicherung → Exportieren</strong> — speichert alle Karten als Datei (regelmäßig empfohlen)</div>
+            </div>
+            <div class="anleitung-zeile">
+              <span class="anleitung-icon">📥</span>
+              <div class="anleitung-text"><strong>Neues Gerät:</strong> Backup-Datei per AirDrop übertragen → Sicherung → Importieren</div>
+            </div>
+            <div class="anleitung-zeile">
+              <span class="anleitung-icon">⚠️</span>
+              <div class="anleitung-text">„Safari-Daten löschen" in den iPhone-Einstellungen entfernt auch die Karten</div>
+            </div>
+          </div>
+        </div>
+
+        <p class="modal-meta">Version 1.3 · Klaus Teltenkötter 2026</p>
       </div>
     </div>
   </div>
@@ -110,7 +159,6 @@
     <!-- ── LERNEN ──────────────────────────────────────── -->
     <section id="view-lernen" class="view hidden">
 
-      <!-- Gruppenauswahl -->
       <div id="lernen-auswahl">
         <div class="card">
           <div class="card-header"><h2>Gruppen auswählen</h2></div>
@@ -119,11 +167,22 @@
             <button id="btn-alle-waehlen" class="btn-secondary">Alle</button>
             <button id="btn-keine-waehlen" class="btn-secondary">Keine</button>
           </div>
+          <div class="lernmodus-toggle">
+            <button class="lernmodus-btn active" data-modus="foto" id="btn-modus-foto">
+              <div class="modus-icons">👤 → 📝</div>
+              <div class="modus-label">Foto → Name</div>
+              <div class="modus-desc">Gesicht sehen · Namen nennen</div>
+            </button>
+            <button class="lernmodus-btn" data-modus="name" id="btn-modus-name">
+              <div class="modus-icons">📝 → 👤</div>
+              <div class="modus-label">Name → Foto</div>
+              <div class="modus-desc">Namen lesen · Gesicht vorstellen</div>
+            </button>
+          </div>
           <button id="btn-lernen-start" class="btn-primary btn-large" disabled>Lernen starten</button>
         </div>
       </div>
 
-      <!-- Flashcard -->
       <div id="lernen-flashcard" class="hidden">
         <div class="lern-header">
           <button id="btn-beenden" class="btn-text">✕ Beenden</button>
@@ -131,8 +190,11 @@
           <button id="btn-mischen" class="btn-text">⇄ Mischen</button>
         </div>
         <div id="lernkarte" class="lernkarte">
-          <div class="lernkarte-foto-wrapper">
+          <div id="lernkarte-foto-wrapper" class="lernkarte-foto-wrapper">
             <img id="lern-foto" src="" alt="Foto">
+          </div>
+          <div id="lern-name-karte" class="lern-name-karte hidden">
+            <span id="lern-name-karte-text"></span>
           </div>
           <div id="lern-name-overlay" class="lern-name-overlay hidden">
             <span id="lern-name-text"></span>
@@ -145,7 +207,6 @@
         </div>
       </div>
 
-      <!-- Ende -->
       <div id="lernen-ende" class="hidden">
         <div class="ende-card">
           <h2>Übung beendet!</h2>
@@ -164,6 +225,52 @@
             <button id="btn-neue-uebung" class="btn-primary">Neue Übung starten</button>
             <button id="btn-ende-auswahl" class="btn-text">Andere Gruppen auswählen</button>
           </div>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- ── STATISTIK ───────────────────────────────────── -->
+    <section id="view-statistik" class="view hidden">
+
+      <div class="card">
+        <div class="card-header"><h2>Übersicht</h2></div>
+        <div class="stat-overview">
+          <div class="stat-overview-item">
+            <span class="stat-overview-zahl" id="stat-total-sitzungen">0</span>
+            <span class="stat-overview-label">Sitzungen</span>
+          </div>
+          <div class="stat-overview-item">
+            <span class="stat-overview-zahl" id="stat-avg-score">—</span>
+            <span class="stat-overview-label">Ø Trefferquote</span>
+          </div>
+          <div class="stat-overview-item">
+            <span class="stat-overview-zahl" id="stat-total-abgefragt">0</span>
+            <span class="stat-overview-label">Abfragen gesamt</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header"><h2>Schwierigste Namen</h2></div>
+        <div id="schwierigste-namen"></div>
+        <p id="keine-schwierig-hinweis" class="hinweis">Noch keine Daten vorhanden.</p>
+        <button id="btn-schwaeche-ueben" class="btn-schwaeche hidden">⟳ Schwächste Karten jetzt üben</button>
+      </div>
+
+      <div class="card">
+        <div class="card-header"><h2>Letzte Sitzungen</h2></div>
+        <div id="sitzungen-verlauf"></div>
+        <p id="keine-verlauf-hinweis" class="hinweis">Noch keine Sitzungen absolviert.</p>
+      </div>
+
+      <div class="card">
+        <div class="sicherung-zeile">
+          <div class="sicherung-info">
+            <strong>Statistik zurücksetzen</strong>
+            <p>Alle Sitzungsdaten löschen, Karten bleiben erhalten</p>
+          </div>
+          <button id="btn-statistik-loeschen" class="btn-danger">Löschen</button>
         </div>
       </div>
 
@@ -216,6 +323,12 @@
         <rect x="2" y="3" width="20" height="18" rx="2"/><path d="M8 12h8M12 8v8"/>
       </svg>
       <span>Lernen</span>
+    </button>
+    <button class="nav-item" data-view="statistik">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="3" y="12" width="4" height="9" rx="1"/><rect x="10" y="7" width="4" height="14" rx="1"/><rect x="17" y="3" width="4" height="18" rx="1"/>
+      </svg>
+      <span>Statistik</span>
     </button>
     <button class="nav-item" data-view="sicherung">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
