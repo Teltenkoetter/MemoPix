@@ -505,9 +505,14 @@ function zeigeKarte() {
   }
 }
 
-function zeigeName() {
+function zeigeName(nichtGewusstWerten = false) {
   nameVisible = true;
   const s = lernKarten[lernIndex];
+  if (nichtGewusstWerten && !answeredIds.has(s.id)) {
+    nichtGewusst++;
+    nichtGewusstIds.add(s.id);
+    answeredIds.add(s.id);
+  }
   if (lernModus === 'name') {
     document.getElementById('lern-foto').src = getFotoUrl(s);
     document.getElementById('lernkarte-foto-wrapper').classList.remove('hidden');
@@ -944,18 +949,12 @@ document.getElementById('lernkarte').addEventListener('click', () => {
   }
 });
 
-// Button: Name zeigen ODER Nicht gewusst ✗
+// Button: Name zeigen = stille Nicht-gewusst-Wertung
 document.getElementById('btn-aufdecken').addEventListener('click', e => {
   e.stopPropagation();
   if (!nameVisible) {
-    zeigeName();
+    zeigeName(true); // Button geklickt = nicht gewusst (still, kein Text)
   } else {
-    const s = lernKarten[lernIndex];
-    if (!answeredIds.has(s.id)) {
-      nichtGewusst++;
-      nichtGewusstIds.add(s.id);
-      answeredIds.add(s.id);
-    }
     naechsteKarteOderEnde();
   }
 });
