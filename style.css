@@ -443,6 +443,14 @@ select option { background: var(--surface2); color: var(--text); }
   cursor: pointer; box-shadow: 0 8px 32px rgba(0,0,0,0.7);
   display: flex; flex-direction: column;
 }
+.lern-feedback {
+  position: absolute; inset: 0; z-index: 10;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 7rem; font-weight: 900; pointer-events: none;
+  border-radius: var(--radius);
+}
+.lern-feedback.gewusst-ok  { color: #4caf50; text-shadow: 0 0 40px rgba(76,175,80,0.6); }
+.lern-feedback.nicht-ok    { color: #cc4444; text-shadow: 0 0 40px rgba(204,68,68,0.6); }
 .lernkarte-foto-wrapper { flex: 1; min-height: 0; }
 .lernkarte-foto-wrapper img { width: 100%; height: 100%; object-fit: cover; display: block; }
 

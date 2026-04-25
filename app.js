@@ -125,6 +125,20 @@ function getSortierteGruppen() {
 // import buffer
 let importDatenBuffer = null;
 
+// feedback
+let feedbackActive = false;
+function zeigeFeedback(typ, callback) {
+  feedbackActive = true;
+  const fb = document.getElementById('lern-feedback');
+  fb.textContent = typ === 'gewusst' ? '✓' : '✗';
+  fb.className = 'lern-feedback ' + (typ === 'gewusst' ? 'gewusst-ok' : 'nicht-ok');
+  setTimeout(() => {
+    fb.className = 'lern-feedback hidden';
+    feedbackActive = false;
+    callback();
+  }, 700);
+}
+
 // ============================================================
 // PHOTO COMPRESSION
 // ============================================================
@@ -478,6 +492,7 @@ async function speichereSitzung() {
 function zeigeKarte() {
   nameVisible = false;
   document.getElementById('lern-name-overlay').classList.add('hidden');
+  document.getElementById('lern-feedback').className = 'lern-feedback hidden';
 
   const s      = lernKarten[lernIndex];
   const gruppe = gruppen.find(g => g.id === s.gruppeId);
@@ -523,6 +538,7 @@ function zeigeName(nichtGewusstWerten = false) {
   const btn = document.getElementById('btn-aufdecken');
   btn.textContent = '';
   btn.style.visibility = 'hidden';
+  if (nichtGewusstWerten) zeigeFeedback('nicht', () => naechsteKarteOderEnde());
 }
 
 function naechsteKarteOderEnde() {
@@ -938,6 +954,7 @@ document.getElementById('btn-lernen-start').addEventListener('click', () => {
 // Foto / Name-Karte klicken = Gewusst → weiter
 // 1. Klick = Name zeigen, 2. Klick = Gewusst ✓
 document.getElementById('lernkarte').addEventListener('click', () => {
+  if (feedbackActive) return;
   if (!nameVisible) {
     zeigeName();
   } else {
@@ -947,17 +964,16 @@ document.getElementById('lernkarte').addEventListener('click', () => {
       gewusstIds.add(s.id);
       answeredIds.add(s.id);
     }
-    naechsteKarteOderEnde();
+    zeigeFeedback('gewusst', () => naechsteKarteOderEnde());
   }
 });
 
-// Button: Name zeigen = stille Nicht-gewusst-Wertung
+// Button: Name zeigen = Nicht gewusst ✗ (rotes Kreuz)
 document.getElementById('btn-aufdecken').addEventListener('click', e => {
   e.stopPropagation();
+  if (feedbackActive) return;
   if (!nameVisible) {
-    zeigeName(true); // Button geklickt = nicht gewusst (still, kein Text)
-  } else {
-    naechsteKarteOderEnde();
+    zeigeName(true); // zeigt rotes ✗, zählt als nicht gewusst
   }
 });
 
