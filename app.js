@@ -573,8 +573,9 @@ async function zeigeEnde() {
   document.getElementById('ende-subtitle').textContent = `${total} Karte${total !== 1 ? 'n' : ''} abgefragt`;
 }
 
-function starteSession(karten) {
-  lernKarten   = mischen([...karten]);
+function starteSession(karten, shuffle = true) {
+  lernKarten   = shuffle ? mischen([...karten]) : [...karten];
+  document.getElementById('btn-mischen').style.visibility = shuffle ? '' : 'hidden';
   lernIndex    = 0;
   gewusst      = 0;
   nichtGewusst = 0;
@@ -1007,10 +1008,14 @@ document.getElementById('btn-schwaeche-waehlen').addEventListener('click', async
 });
 
 document.getElementById('btn-lernen-start').addEventListener('click', () => {
-  const karten = studenten.filter(s => getSelectedGids().includes(s.gruppeId));
+  const selectedGids = getSelectedGids();
+  const karten = studenten.filter(s => selectedGids.includes(s.gruppeId));
   if (!karten.length) return;
+  // Tutorial-Gruppen immer in Reihenfolge (nicht mischen)
+  const isTutorial = selectedGids.length === 1 &&
+    gruppen.find(g => g.id === selectedGids[0])?.id.startsWith('tutorial-');
   document.getElementById('lernen-auswahl').classList.add('hidden');
-  starteSession(karten);
+  starteSession(karten, !isTutorial);
 });
 
 // Foto / Name-Karte klicken = Gewusst → weiter
