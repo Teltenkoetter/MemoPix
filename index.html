@@ -31,16 +31,20 @@
           <div class="modal-section-title">🎴 Lernmodus</div>
           <div class="anleitung-zeilen">
             <div class="anleitung-zeile">
-              <span class="anleitung-icon">👤</span>
-              <div class="anleitung-text"><strong>Foto → Name</strong> — Gesicht sehen, Namen erinnern · Foto tippen = gewusst</div>
+              <span class="anleitung-icon">🖼️</span>
+              <div class="anleitung-text"><strong>Bild → Begriff</strong> — Bild sehen, Begriff erinnern · Bild tippen = gewusst</div>
             </div>
             <div class="anleitung-zeile">
               <span class="anleitung-icon">📝</span>
-              <div class="anleitung-text"><strong>Name → Foto</strong> — Namen lesen, Gesicht vorstellen · Name tippen = gewusst</div>
+              <div class="anleitung-text"><strong>Begriff → Bild</strong> — Begriff lesen, Bild vorstellen · Begriff tippen = gewusst</div>
             </div>
             <div class="anleitung-zeile">
               <span class="anleitung-icon">🔍</span>
-              <div class="anleitung-text"><strong>„Name/Gesicht zeigen"</strong> — Antwort aufdecken, zählt als nachgeschaut</div>
+              <div class="anleitung-text"><strong>„Begriff zeigen"</strong> — Antwort aufdecken, zählt als nachgeschaut (✗)</div>
+            </div>
+            <div class="anleitung-zeile">
+              <span class="anleitung-icon">💬</span>
+              <div class="anleitung-text"><strong>Notiz</strong> — erscheint beim Aufdecken als Zusatzinfo zum Begriff</div>
             </div>
             <div class="anleitung-zeile">
               <span class="anleitung-icon">↔️</span>
@@ -62,31 +66,31 @@
           <div class="anleitung-zeilen">
             <div class="anleitung-zeile">
               <span class="anleitung-icon">1️⃣</span>
-              <div class="anleitung-text"><strong>Gruppe erstellen</strong> — z.B. „WS 2026 Gruppe A"</div>
+              <div class="anleitung-text"><strong>Gruppe erstellen</strong> — z.B. „Biologie Kapitel 3"</div>
             </div>
             <div class="anleitung-zeile">
               <span class="anleitung-icon">2️⃣</span>
-              <div class="anleitung-text"><strong>Karte hinzufügen</strong> — Gruppe wählen, Name eingeben, Foto auswählen</div>
-            </div>
-            <div class="anleitung-zeile">
-              <span class="anleitung-icon">✏️</span>
-              <div class="anleitung-text">Karten können <strong>umbenannt, in andere Gruppen verschoben</strong> oder gelöscht werden</div>
-            </div>
-            <div class="anleitung-zeile">
-              <span class="anleitung-icon">📋</span>
-              <div class="anleitung-text"><strong>Kopieren</strong> — Karte mit gleichem Foto in eine andere Gruppe duplizieren</div>
+              <div class="anleitung-text"><strong>Karte hinzufügen</strong> — Gruppe wählen, Begriff eingeben, dann Foto <em>oder</em> Text wählen</div>
             </div>
             <div class="anleitung-zeile">
               <span class="anleitung-icon">📷</span>
-              <div class="anleitung-text"><strong>Foto tauschen</strong> — Thumbnail antippen öffnet direkt die Kamera oder Galerie</div>
+              <div class="anleitung-text"><strong>Foto-Karte</strong> — Bild als Vorderseite, Begriff als Rückseite</div>
             </div>
             <div class="anleitung-zeile">
-              <span class="anleitung-icon">🔍</span>
-              <div class="anleitung-text"><strong>Suchen &amp; Sortieren</strong> — Karten nach Namen filtern oder nach A–Z, Gruppe usw. ordnen</div>
+              <span class="anleitung-icon">📝</span>
+              <div class="anleitung-text"><strong>Text-Karte</strong> — Definition/Erklärung als Vorderseite, Begriff als Rückseite</div>
             </div>
             <div class="anleitung-zeile">
-              <span class="anleitung-icon">✂️</span>
-              <div class="anleitung-text">Fotos werden automatisch <strong>mittig quadratisch zugeschnitten</strong> — Gesicht möglichst in der Bildmitte halten</div>
+              <span class="anleitung-icon">✏️</span>
+              <div class="anleitung-text">Karten können <strong>bearbeitet, verschoben</strong> oder gelöscht werden</div>
+            </div>
+            <div class="anleitung-zeile">
+              <span class="anleitung-icon">📋</span>
+              <div class="anleitung-text"><strong>Kopieren</strong> — Karte in eine andere Gruppe duplizieren</div>
+            </div>
+            <div class="anleitung-zeile">
+              <span class="anleitung-icon">▲▼</span>
+              <div class="anleitung-text"><strong>Reihenfolge</strong> — Gruppen per ▲▼ verschieben</div>
             </div>
           </div>
         </div>
@@ -112,7 +116,7 @@
             </div>
           </div>
         </div>
-        <p class="modal-meta">Version 1.4 · Klaus Teltenkötter 2026</p>
+        <p class="modal-meta">Version 1.5 · Klaus Teltenkötter 2026</p>
       </div>
     </div>
   </div>
@@ -126,12 +130,20 @@
       </div>
       <div class="modal-body">
         <div class="form-group">
-          <label for="karte-edit-name">Name</label>
+          <label for="karte-edit-name">Begriff / Name</label>
           <input type="text" id="karte-edit-name" maxlength="100">
         </div>
         <div class="form-group">
           <label for="karte-edit-gruppe">Gruppe</label>
           <select id="karte-edit-gruppe"></select>
+        </div>
+        <div class="form-group hidden" id="karte-edit-vorderseite-gruppe">
+          <label for="karte-edit-vorderseite">Text / Vorderseite</label>
+          <textarea id="karte-edit-vorderseite" class="input-vorderseite" maxlength="300"></textarea>
+        </div>
+        <div class="form-group">
+          <label for="karte-edit-notiz">Notiz <span class="label-optional">(optional)</span></label>
+          <input type="text" id="karte-edit-notiz" maxlength="100" placeholder="Zusatzinfo, erscheint beim Aufdecken…">
         </div>
         <button id="btn-karte-edit-save" class="btn-primary">Speichern</button>
       </div>
@@ -206,19 +218,32 @@
             </select>
           </div>
           <div class="form-group">
-            <label for="input-name">Name</label>
-            <input type="text" id="input-name" placeholder="Vor- und Nachname" required maxlength="100">
+            <label for="input-name">Begriff / Name</label>
+            <input type="text" id="input-name" placeholder="Begriff oder Name…" required maxlength="100">
           </div>
           <div class="form-group">
-            <label>Foto</label>
-            <div class="foto-upload" id="foto-upload">
-              <input type="file" id="input-foto" accept="image/*" required>
-              <div id="upload-placeholder" class="upload-placeholder">
-                <span class="upload-icon">📷</span>
-                <span>Tippen zum Foto auswählen</span>
-              </div>
-              <img id="foto-vorschau" class="foto-vorschau hidden" alt="">
+            <label>Karten-Inhalt</label>
+            <div class="karten-modus-chips">
+              <button type="button" class="karten-modus-chip active" id="chip-foto">📷 Foto</button>
+              <button type="button" class="karten-modus-chip" id="chip-text">📝 Text</button>
             </div>
+            <div id="foto-bereich">
+              <div class="foto-upload" id="foto-upload">
+                <input type="file" id="input-foto" accept="image/*">
+                <div id="upload-placeholder" class="upload-placeholder">
+                  <span class="upload-icon">📷</span>
+                  <span>Tippen zum Foto auswählen</span>
+                </div>
+                <img id="foto-vorschau" class="foto-vorschau hidden" alt="">
+              </div>
+            </div>
+            <div id="text-bereich" class="hidden">
+              <textarea id="input-vorderseite" class="input-vorderseite" placeholder="Text, Definition oder Erklärung… (max. 300 Zeichen)" maxlength="300"></textarea>
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="input-notiz">Notiz <span class="label-optional">(optional, erscheint beim Aufdecken)</span></label>
+            <input type="text" id="input-notiz" placeholder="Zusatzinfo zum Begriff…" maxlength="100">
           </div>
           <button type="submit" id="btn-karte-speichern" class="btn-primary">Karte speichern</button>
         </form>
@@ -281,6 +306,9 @@
           <div id="lernkarte-foto-wrapper" class="lernkarte-foto-wrapper">
             <img id="lern-foto" src="" alt="Foto">
           </div>
+          <div id="lernkarte-text-vorderseite" class="lernkarte-text-vorderseite hidden">
+            <p id="lern-vorderseite-text"></p>
+          </div>
           <div id="lern-name-karte" class="lern-name-karte hidden">
             <span id="lern-name-karte-text"></span>
             <span id="lern-name-karte-gruppe" class="lern-name-karte-gruppe"></span>
@@ -288,6 +316,7 @@
           <div id="lern-name-overlay" class="lern-name-overlay hidden">
             <span id="lern-name-text"></span>
             <span id="lern-gruppe-text" class="lern-gruppe-text"></span>
+            <p id="lern-notiz-text" class="lern-notiz hidden"></p>
           </div>
         </div>
         <div class="lern-steuerung">
@@ -431,6 +460,6 @@
   </nav>
 
   <div id="toast" class="toast hidden"></div>
-  <script src="app.js?v=20"></script>
+  <script src="app.js?v=21"></script>
 </body>
 </html>

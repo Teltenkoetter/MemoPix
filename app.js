@@ -213,14 +213,18 @@ async function getSchwacheKarten() {
 // ============================================================
 
 function karteItemHtml(s) {
+  const isText = s.modus === 'text';
+  const thumb = isText
+    ? `<div class="karte-text-thumb">${esc((s.vorderseite || '').substring(0, 40))}${(s.vorderseite || '').length > 40 ? '…' : ''}</div>`
+    : `<img src="${getFotoUrl(s)}" alt="${esc(s.name)}" loading="lazy">
+       <div class="karte-foto-overlay">📷</div>
+       <input type="file" accept="image/*" class="karte-foto-input" data-id="${s.id}">`;
   return `
     <div class="karte-item">
       <div class="karte-foto-wrapper">
-        <img src="${getFotoUrl(s)}" alt="${esc(s.name)}" loading="lazy">
-        <div class="karte-foto-overlay">📷</div>
-        <input type="file" accept="image/*" class="karte-foto-input" data-id="${s.id}">
+        ${thumb}
       </div>
-      <span class="karte-name">${esc(s.name)}</span>
+      <span class="karte-name">${esc(s.name)}${s.notiz ? ' <span style="opacity:.45;font-size:.7rem">📝</span>' : ''}</span>
       <button class="btn-karte-ren"  data-id="${s.id}" title="Bearbeiten">✏️</button>
       <button class="btn-karte-copy" data-id="${s.id}" title="Kopieren">📋</button>
       <button class="btn-karte-del"  data-id="${s.id}" title="Löschen">✕</button>
@@ -488,47 +492,67 @@ function zeigeKarte() {
   document.getElementById('lern-feedback').className = 'lern-feedback hidden';
   document.getElementById('btn-aufdecken').style.visibility = '';
 
-  const s      = lernKarten[lernIndex];
-  const gruppe = gruppen.find(g => g.id === s.gruppeId);
-  const gName  = gruppe ? gruppe.name : '';
+  const s           = lernKarten[lernIndex];
+  const gruppe      = gruppen.find(g => g.id === s.gruppeId);
+  const gName       = gruppe ? gruppe.name : '';
+  const kartenModus = s.modus || 'foto';
 
-  document.getElementById('lern-name-text').textContent        = s.name;
-  document.getElementById('lern-gruppe-text').textContent      = gName;
+  document.getElementById('lern-name-text').textContent         = s.name;
+  document.getElementById('lern-gruppe-text').textContent       = gName;
   document.getElementById('lern-name-karte-gruppe').textContent = gName;
-  document.getElementById('lern-position').textContent         = `${lernIndex + 1} / ${lernKarten.length}`;
+  document.getElementById('lern-position').textContent          = `${lernIndex + 1} / ${lernKarten.length}`;
   document.getElementById('btn-zurueck').classList.toggle('invisible', lernIndex === 0);
   document.getElementById('btn-weiter').classList.toggle('invisible', lernIndex === lernKarten.length - 1);
 
+  // Alle Anzeigebereiche zurücksetzen
+  document.getElementById('lernkarte-foto-wrapper').classList.add('hidden');
+  document.getElementById('lernkarte-text-vorderseite').classList.add('hidden');
+  document.getElementById('lern-name-karte').classList.add('hidden');
+
   const aufdeckBtn = document.getElementById('btn-aufdecken');
   aufdeckBtn.style.visibility = '';
-  if (lernModus === 'name') {
-    document.getElementById('lernkarte-foto-wrapper').classList.add('hidden');
+
+  if (kartenModus === 'text') {
+    document.getElementById('lern-vorderseite-text').textContent = s.vorderseite || '';
+    document.getElementById('lernkarte-text-vorderseite').classList.remove('hidden');
+    aufdeckBtn.textContent = 'Begriff zeigen';
+  } else if (lernModus === 'name') {
     document.getElementById('lern-name-karte').classList.remove('hidden');
     document.getElementById('lern-name-karte-text').textContent = s.name;
-    aufdeckBtn.textContent = 'Gesicht zeigen';
+    aufdeckBtn.textContent = 'Bild zeigen';
   } else {
     document.getElementById('lern-foto').src = getFotoUrl(s);
     document.getElementById('lernkarte-foto-wrapper').classList.remove('hidden');
-    document.getElementById('lern-name-karte').classList.add('hidden');
-    aufdeckBtn.textContent = 'Name zeigen';
+    aufdeckBtn.textContent = 'Begriff zeigen';
   }
 }
 
 function zeigeName(wertung) {
-  // wertung = 'gewusst' | 'nicht-gewusst'
   nameVisible = true;
-  const s = lernKarten[lernIndex];
+  const s           = lernKarten[lernIndex];
+  const kartenModus = s.modus || 'foto';
   if (!answeredIds.has(s.id)) {
     if (wertung === 'gewusst') { gewusst++; gewusstIds.add(s.id); }
     else                       { nichtGewusst++; nichtGewusstIds.add(s.id); }
     answeredIds.add(s.id);
   }
-  if (lernModus === 'name') {
+  if (kartenModus === 'text') {
+    document.getElementById('lernkarte-text-vorderseite').classList.add('hidden');
+    document.getElementById('lern-name-overlay').classList.remove('hidden');
+  } else if (lernModus === 'name') {
     document.getElementById('lern-foto').src = getFotoUrl(s);
     document.getElementById('lernkarte-foto-wrapper').classList.remove('hidden');
     document.getElementById('lern-name-karte').classList.add('hidden');
   } else {
     document.getElementById('lern-name-overlay').classList.remove('hidden');
+  }
+  // Notiz anzeigen falls vorhanden
+  const notizEl = document.getElementById('lern-notiz-text');
+  if (s.notiz) {
+    notizEl.textContent = s.notiz;
+    notizEl.classList.remove('hidden');
+  } else {
+    notizEl.classList.add('hidden');
   }
   document.getElementById('btn-aufdecken').style.visibility = 'hidden';
   zeigeFeedback(wertung === 'gewusst' ? 'gewusst' : 'nicht');
@@ -572,11 +596,20 @@ function openKarteEditModal(studentId, mode) {
   const s = studenten.find(x => x.id === studentId);
 
   document.getElementById('karte-edit-titel').textContent = mode === 'copy' ? 'Karte kopieren' : 'Karte bearbeiten';
-  document.getElementById('karte-edit-name').value = s.name;
+  document.getElementById('karte-edit-name').value  = s.name;
+  document.getElementById('karte-edit-notiz').value = s.notiz || '';
+
+  // Vorderseite nur für Text-Karten anzeigen
+  const vGruppe = document.getElementById('karte-edit-vorderseite-gruppe');
+  if (s.modus === 'text') {
+    document.getElementById('karte-edit-vorderseite').value = s.vorderseite || '';
+    vGruppe.classList.remove('hidden');
+  } else {
+    vGruppe.classList.add('hidden');
+  }
 
   const sel = document.getElementById('karte-edit-gruppe');
   sel.innerHTML = gruppen.map(g => `<option value="${g.id}">${esc(g.name)}</option>`).join('');
-
   if (mode === 'copy') {
     const other = gruppen.find(g => g.id !== s.gruppeId);
     sel.value = other ? other.id : (gruppen[0]?.id || '');
@@ -683,26 +716,36 @@ document.getElementById('karte-edit-name').addEventListener('keydown', e => {
 document.getElementById('btn-karte-edit-save').addEventListener('click', async () => {
   const name     = document.getElementById('karte-edit-name').value.trim();
   const gruppeId = document.getElementById('karte-edit-gruppe').value;
+  const notiz    = document.getElementById('karte-edit-notiz').value.trim();
   if (!name || !gruppeId) return;
 
   if (editModalMode === 'copy') {
-    const orig    = studenten.find(x => x.id === editModalStudentId);
-    const fotoBuf = await orig.foto.arrayBuffer();
-    const newS    = {
-      id: Date.now().toString(), name, gruppeId,
-      foto: new Blob([fotoBuf], { type: orig.foto.type }),
-      erstellt: new Date().toISOString()
-    };
+    const orig = studenten.find(x => x.id === editModalStudentId);
+    let newS;
+    if (orig.modus === 'text') {
+      newS = { id: Date.now().toString(), name, gruppeId, modus: 'text',
+               foto: null, vorderseite: orig.vorderseite || '', notiz,
+               erstellt: new Date().toISOString() };
+    } else {
+      const fotoBuf = await orig.foto.arrayBuffer();
+      newS = { id: Date.now().toString(), name, gruppeId, modus: 'foto',
+               foto: new Blob([fotoBuf], { type: orig.foto.type }),
+               vorderseite: '', notiz, erstellt: new Date().toISOString() };
+    }
     await dbPut('studenten', newS);
     studenten.push(newS);
     toast(`Karte kopiert: „${name}"`);
   } else {
     const s    = studenten.find(x => x.id === editModalStudentId);
-    const foto = s.foto;        // Blob-Referenz sichern (Safari-Bug: dbPut kann Blob invalidieren)
+    const foto = s.foto;
     s.name     = name;
     s.gruppeId = gruppeId;
+    s.notiz    = notiz;
+    if (s.modus === 'text') {
+      s.vorderseite = document.getElementById('karte-edit-vorderseite').value.trim();
+    }
     await dbPut('studenten', s);
-    s.foto = foto;              // Referenz wiederherstellen
+    s.foto = foto;
     toast(`Karte aktualisiert: „${name}"`);
   }
   document.getElementById('karte-edit-modal').classList.add('hidden');
@@ -776,6 +819,20 @@ document.getElementById('select-gruppe').addEventListener('change', e => {
   if (e.target.value) localStorage.setItem('lastGruppeId', e.target.value);
 });
 
+// Modus-Chips (Foto / Text)
+document.getElementById('chip-foto').addEventListener('click', () => {
+  document.getElementById('chip-foto').classList.add('active');
+  document.getElementById('chip-text').classList.remove('active');
+  document.getElementById('foto-bereich').classList.remove('hidden');
+  document.getElementById('text-bereich').classList.add('hidden');
+});
+document.getElementById('chip-text').addEventListener('click', () => {
+  document.getElementById('chip-text').classList.add('active');
+  document.getElementById('chip-foto').classList.remove('active');
+  document.getElementById('text-bereich').classList.remove('hidden');
+  document.getElementById('foto-bereich').classList.add('hidden');
+});
+
 // Foto Vorschau (Karte hinzufügen)
 document.getElementById('input-foto').addEventListener('change', e => {
   const file = e.target.files[0];
@@ -794,21 +851,33 @@ document.getElementById('form-karte').addEventListener('submit', async e => {
   e.preventDefault();
   const name     = document.getElementById('input-name').value.trim();
   const gruppeId = document.getElementById('select-gruppe').value;
-  const file     = document.getElementById('input-foto').files[0];
-  if (!name || !gruppeId || !file) return;
+  const modus    = document.getElementById('chip-foto').classList.contains('active') ? 'foto' : 'text';
+  const notiz    = document.getElementById('input-notiz').value.trim();
+  if (!name || !gruppeId) return;
   const btn = document.getElementById('btn-karte-speichern');
   btn.disabled = true; btn.textContent = 'Wird gespeichert…';
   try {
-    const blob = await compressPhoto(file);
-    const s = { id: Date.now().toString(), name, gruppeId, foto: blob, erstellt: new Date().toISOString() };
+    let s;
+    if (modus === 'foto') {
+      const file = document.getElementById('input-foto').files[0];
+      if (!file) { toast('Bitte ein Foto auswählen'); return; }
+      const blob = await compressPhoto(file);
+      s = { id: Date.now().toString(), name, gruppeId, modus: 'foto', foto: blob, vorderseite: '', notiz, erstellt: new Date().toISOString() };
+    } else {
+      const vorderseite = document.getElementById('input-vorderseite').value.trim();
+      if (!vorderseite) { toast('Bitte einen Text eingeben'); return; }
+      s = { id: Date.now().toString(), name, gruppeId, modus: 'text', foto: null, vorderseite, notiz, erstellt: new Date().toISOString() };
+    }
     await dbPut('studenten', s);
     studenten.push(s);
-    document.getElementById('input-name').value = '';
-    document.getElementById('input-foto').value = '';
+    document.getElementById('input-name').value       = '';
+    document.getElementById('input-notiz').value      = '';
+    document.getElementById('input-foto').value       = '';
+    document.getElementById('input-vorderseite').value = '';
     document.getElementById('foto-vorschau').classList.add('hidden');
     document.getElementById('upload-placeholder').classList.remove('hidden');
     renderVerwaltung();
-    toast(`Karte für „${name}" gespeichert`);
+    toast(`Karte „${name}" gespeichert`);
   } catch (err) {
     toast('Fehler: ' + err.message);
   } finally {
@@ -1068,7 +1137,7 @@ document.getElementById('btn-export-start').addEventListener('click', async () =
   const exportGruppen  = gruppen.filter(g => selectedGids.includes(g.id));
   const exportStudenten = studenten.filter(s => selectedGids.includes(s.gruppeId));
   const studExport = await Promise.all(exportStudenten.map(async s => ({
-    ...s, foto: await blobToDataUrl(s.foto)
+    ...s, foto: (s.modus === 'text' || !s.foto) ? null : await blobToDataUrl(s.foto)
   })));
 
   const payload = {
@@ -1160,7 +1229,7 @@ document.getElementById('btn-import-start').addEventListener('click', async () =
       await dbClear('studenten');
       for (const g of importDatenBuffer.gruppen) await dbPut('gruppen', g);
       for (const s of importDatenBuffer.studenten)
-        await dbPut('studenten', { ...s, foto: dataUrlToBlob(s.foto) });
+        await dbPut('studenten', { ...s, foto: (s.modus === 'text' || !s.foto) ? null : dataUrlToBlob(s.foto) });
     } else {
       // Hinzufügen: merge, bestehende unberührt
       for (const importGruppe of importDatenBuffer.gruppen) {
@@ -1175,7 +1244,7 @@ document.getElementById('btn-import-start').addEventListener('click', async () =
         // Importierte Karten einfügen
         const importStudents = importDatenBuffer.studenten.filter(s => s.gruppeId === importGruppe.id);
         for (const s of importStudents)
-          await dbPut('studenten', { ...s, gruppeId: targetId, foto: dataUrlToBlob(s.foto) });
+          await dbPut('studenten', { ...s, gruppeId: targetId, foto: (s.modus === 'text' || !s.foto) ? null : dataUrlToBlob(s.foto) });
       }
     }
     await ladeAlles();
@@ -1212,11 +1281,11 @@ async function erstelleTutorialGruppeWennNeu() {
     },
     {
       id: 'tut-2', name: 'Tippen · Werten · Weiter',
-      svg: `<svg viewBox="0 0 360 480" xmlns="http://www.w3.org/2000/svg"><rect width="360" height="480" fill="#111"/><g transform="translate(180,155)"><ellipse cx="0" cy="-60" rx="22" ry="28" fill="#333"/><rect x="-22" y="-35" width="44" height="55" rx="8" fill="#333"/><rect x="-40" y="8" width="80" height="14" rx="7" fill="#2a2a2a"/><circle cx="0" cy="-60" r="38" fill="none" stroke="#444" stroke-width="2" opacity="0.6"/><circle cx="0" cy="-60" r="52" fill="none" stroke="#333" stroke-width="1.5" opacity="0.4"/></g><text x="100" y="220" text-anchor="middle" font-size="28" fill="#4caf50">✓</text><text x="260" y="220" text-anchor="middle" font-size="28" fill="#cc4444">✗</text><line x1="30" y1="250" x2="330" y2="250" stroke="#222" stroke-width="1"/><text x="180" y="278" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="12" font-weight="700" fill="#f0f0f0">So lernst du:</text><text x="50" y="304" font-family="-apple-system,sans-serif" font-size="11" fill="#4caf50">①</text><text x="68" y="304" font-family="-apple-system,sans-serif" font-size="11" fill="#aaa">Bild tippen → Begriff + ✓</text><text x="50" y="326" font-family="-apple-system,sans-serif" font-size="11" fill="#cc4444">②</text><text x="68" y="326" font-family="-apple-system,sans-serif" font-size="11" fill="#aaa">„Name zeigen" → ✗ Nicht gewusst</text><text x="50" y="348" font-family="-apple-system,sans-serif" font-size="11" fill="#888">③</text><text x="68" y="348" font-family="-apple-system,sans-serif" font-size="11" fill="#666">← → Pfeile = Blättern</text><text x="180" y="386" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="10" fill="#555">Nochmal tippen = nächste Karte</text></svg>`
+      svg: `<svg viewBox="0 0 360 480" xmlns="http://www.w3.org/2000/svg"><rect width="360" height="480" fill="#111"/><g transform="translate(180,155)"><ellipse cx="0" cy="-60" rx="22" ry="28" fill="#333"/><rect x="-22" y="-35" width="44" height="55" rx="8" fill="#333"/><rect x="-40" y="8" width="80" height="14" rx="7" fill="#2a2a2a"/><circle cx="0" cy="-60" r="38" fill="none" stroke="#444" stroke-width="2" opacity="0.6"/><circle cx="0" cy="-60" r="52" fill="none" stroke="#333" stroke-width="1.5" opacity="0.4"/></g><text x="100" y="220" text-anchor="middle" font-size="28" fill="#4caf50">✓</text><text x="260" y="220" text-anchor="middle" font-size="28" fill="#cc4444">✗</text><line x1="30" y1="250" x2="330" y2="250" stroke="#222" stroke-width="1"/><text x="180" y="278" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="12" font-weight="700" fill="#f0f0f0">So lernst du:</text><text x="50" y="304" font-family="-apple-system,sans-serif" font-size="11" fill="#4caf50">①</text><text x="68" y="304" font-family="-apple-system,sans-serif" font-size="11" fill="#aaa">Bild/Text tippen → Begriff + ✓</text><text x="50" y="326" font-family="-apple-system,sans-serif" font-size="11" fill="#cc4444">②</text><text x="68" y="326" font-family="-apple-system,sans-serif" font-size="11" fill="#aaa">„Begriff zeigen" → ✗ nachgeschaut</text><text x="50" y="348" font-family="-apple-system,sans-serif" font-size="11" fill="#888">③</text><text x="68" y="348" font-family="-apple-system,sans-serif" font-size="11" fill="#666">← → Pfeile = Blättern ohne Wertung</text><text x="180" y="386" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="10" fill="#555">Nochmal tippen = nächste Karte</text></svg>`
     },
     {
       id: 'tut-3', name: 'Gruppen & Karten',
-      svg: `<svg viewBox="0 0 360 480" xmlns="http://www.w3.org/2000/svg"><rect width="360" height="480" fill="#111"/><rect x="80" y="90" width="200" height="140" rx="10" fill="#2a2a2a"/><rect x="80" y="75" width="90" height="25" rx="6" fill="#2a2a2a"/><rect x="100" y="110" width="75" height="95" rx="6" fill="#1a1a1a" stroke="#333" stroke-width="1"/><rect x="185" y="110" width="75" height="95" rx="6" fill="#1a1a1a" stroke="#333" stroke-width="1"/><circle cx="137" cy="138" r="14" fill="#333"/><rect x="117" y="155" width="40" height="30" rx="5" fill="#333"/><circle cx="222" cy="138" r="14" fill="#383838"/><rect x="202" y="155" width="40" height="30" rx="5" fill="#383838"/><circle cx="260" cy="215" r="20" fill="#fff"/><text x="260" y="222" text-anchor="middle" font-size="24" fill="#000" font-weight="900">+</text><line x1="30" y1="255" x2="330" y2="255" stroke="#222" stroke-width="1"/><text x="180" y="283" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="12" font-weight="700" fill="#f0f0f0">Eigene Gruppen anlegen:</text><text x="180" y="308" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="11" fill="#aaa">VERWALTUNG → Gruppe anlegen</text><text x="180" y="328" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="11" fill="#aaa">→ Bild + Begriff hinzufügen</text><text x="180" y="360" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="11" fill="#666">Gruppen per ▲▼ in der</text><text x="180" y="378" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="11" fill="#666">Reihenfolge sortieren.</text></svg>`
+      svg: `<svg viewBox="0 0 360 480" xmlns="http://www.w3.org/2000/svg"><rect width="360" height="480" fill="#111"/><rect x="80" y="90" width="200" height="140" rx="10" fill="#2a2a2a"/><rect x="80" y="75" width="90" height="25" rx="6" fill="#2a2a2a"/><rect x="100" y="110" width="75" height="95" rx="6" fill="#1a1a1a" stroke="#333" stroke-width="1"/><rect x="185" y="110" width="75" height="95" rx="6" fill="#1a1a1a" stroke="#333" stroke-width="1"/><circle cx="137" cy="138" r="14" fill="#333"/><rect x="117" y="155" width="40" height="30" rx="5" fill="#333"/><text x="222" y="148" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="9" fill="#666">Def.</text><rect x="202" y="155" width="40" height="20" rx="3" fill="#2a2a2a"/><rect x="202" y="178" width="40" height="8" rx="2" fill="#222"/><circle cx="260" cy="215" r="20" fill="#fff"/><text x="260" y="222" text-anchor="middle" font-size="24" fill="#000" font-weight="900">+</text><line x1="30" y1="255" x2="330" y2="255" stroke="#222" stroke-width="1"/><text x="180" y="283" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="12" font-weight="700" fill="#f0f0f0">Eigene Gruppen anlegen:</text><text x="180" y="308" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="11" fill="#aaa">VERWALTUNG → Gruppe anlegen</text><text x="180" y="328" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="11" fill="#aaa">→ 📷 Foto-Karte oder 📝 Text-Karte</text><text x="180" y="356" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="11" fill="#666">Notiz ergänzt den Begriff beim</text><text x="180" y="374" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="11" fill="#666">Aufdecken als Zusatzinfo.</text><text x="180" y="400" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="11" fill="#555">Gruppen per ▲▼ sortieren.</text></svg>`
     },
     {
       id: 'tut-4', name: 'App installieren & offline nutzen',
