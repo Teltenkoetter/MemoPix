@@ -772,17 +772,21 @@ textarea.input-vorderseite::placeholder { color: var(--muted); }
 .schwierig-item { display: flex; align-items: center; gap: 0.75rem; padding: 0.55rem 0.6rem; border-bottom: 1px solid var(--border); }
 .schwierig-item:last-child { border-bottom: none; }
 .schwierig-rank { font-size: 0.75rem; color: var(--muted); font-weight: 700; width: 20px; text-align: center; flex-shrink: 0; }
-.schwierig-name { flex: 1; font-size: 0.9rem; font-weight: 600; }
-.schwierig-rate { font-size: 0.8rem; font-weight: 700; color: var(--muted); }
+.schwierig-name-wrap { flex: 1; display: flex; flex-direction: column; gap: 0.25rem; min-width: 0; }
+.schwierig-name { font-size: 0.9rem; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.schwierig-bar-track { height: 4px; background: rgba(255,255,255,0.07); border-radius: 2px; overflow: hidden; }
+.schwierig-bar-fill  { height: 100%; background: #e05a5a; border-radius: 2px; transition: width 0.4s ease; }
+.schwierig-rate { font-size: 0.8rem; font-weight: 700; color: #e05a5a; flex-shrink: 0; width: 34px; text-align: right; }
 
 .sitzung-item { display: flex; align-items: center; gap: 0.75rem; padding: 0.6rem 0; border-bottom: 1px solid var(--border); }
 .sitzung-item:last-child { border-bottom: none; }
-.sitzung-datum { font-size: 0.78rem; color: var(--muted); flex-shrink: 0; width: 80px; }
-.sitzung-info { flex: 1; font-size: 0.85rem; }
-.sitzung-score { font-size: 0.88rem; font-weight: 700; }
-.sitzung-score.gut    { color: var(--text); }
-.sitzung-score.mitte  { color: var(--muted); }
-.sitzung-score.schlecht { color: var(--muted); }
+.sitzung-datum { font-size: 0.75rem; color: var(--muted); flex-shrink: 0; width: 76px; line-height: 1.4; }
+.sitzung-info { flex: 1; display: flex; flex-direction: column; gap: 0.1rem; font-size: 0.85rem; min-width: 0; }
+.sitzung-gruppe { font-size: 0.72rem; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sitzung-score { font-size: 0.88rem; font-weight: 700; flex-shrink: 0; }
+.sitzung-score.gut     { color: #6fcf7a; }
+.sitzung-score.mitte   { color: #f0c060; }
+.sitzung-score.schlecht { color: #e05a5a; }
 
 .btn-schwaeche {
   display: block; width: 100%; margin-top: 0.85rem;

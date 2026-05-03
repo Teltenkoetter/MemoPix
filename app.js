@@ -654,8 +654,13 @@ async function renderStatistik() {
     schwierigEl.innerHTML = nameArr.map((item, i) => `
       <div class="schwierig-item">
         <span class="schwierig-rank">${i + 1}</span>
-        <span class="schwierig-name">${esc(item.name)}</span>
-        <span class="schwierig-rate">${item.rate}% ✗</span>
+        <div class="schwierig-name-wrap">
+          <span class="schwierig-name">${esc(item.name)}</span>
+          <div class="schwierig-bar-track">
+            <div class="schwierig-bar-fill" style="width:${item.rate}%"></div>
+          </div>
+        </div>
+        <span class="schwierig-rate">${item.rate}%</span>
       </div>`).join('');
 
     const schwacheKarten = await getSchwacheKarten();
@@ -686,10 +691,16 @@ async function renderStatistik() {
       const datum   = d.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' });
       const uhrzeit = d.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
       const cls = sitz.score >= 75 ? 'gut' : sitz.score >= 50 ? 'mitte' : 'schlecht';
+      const gruppenText = sitz.gruppenNamen?.length
+        ? sitz.gruppenNamen.join(', ')
+        : null;
       return `
         <div class="sitzung-item">
           <span class="sitzung-datum">${datum} ${uhrzeit}</span>
-          <span class="sitzung-info">${sitz.total} Karte${sitz.total !== 1 ? 'n' : ''}</span>
+          <div class="sitzung-info">
+            <span>${sitz.total} Karte${sitz.total !== 1 ? 'n' : ''}</span>
+            ${gruppenText ? `<span class="sitzung-gruppe">${esc(gruppenText)}</span>` : ''}
+          </div>
           <span class="sitzung-score ${cls}">${sitz.score}%</span>
         </div>`;
     }).join('');
@@ -708,11 +719,17 @@ async function speichereSitzung() {
   }));
   const answeredCount = gewusst + nichtGewusst;
   const score = answeredCount > 0 ? Math.round((gewusst / answeredCount) * 100) : 0;
+  // Beteiligte Gruppen ermitteln
+  const gidsInSession = [...new Set(lernKarten.map(s => s.gruppeId).filter(Boolean))];
+  const gruppenNamen  = gidsInSession
+    .map(gid => gruppen.find(g => g.id === gid)?.name)
+    .filter(Boolean);
   await dbPut('sitzungen', {
     id: Date.now().toString(),
     datum: new Date().toISOString(),
     total: lernKarten.length,
-    gewusst, nichtGewusst, score, details
+    gewusst, nichtGewusst, score, details,
+    gruppenNamen
   });
 }
 
@@ -1574,6 +1591,8 @@ document.getElementById('btn-export').addEventListener('click', () => {
     });
   });
   document.getElementById('export-modal').classList.remove('hidden');
+  // iOS-Hinweis nur anzeigen, wenn kein nativer Speicherdialog verfügbar
+  document.getElementById('export-ios-hinweis').classList.toggle('hidden', !!window.showSaveFilePicker);
 });
 
 document.getElementById('btn-export-modal-close').addEventListener('click', () =>
@@ -1630,13 +1649,32 @@ document.getElementById('btn-export-start').addEventListener('click', async () =
     gruppenTeil = `${selectedGids.length}-Gruppen`;
   }
 
+  const filename = `memofix-${gruppenTeil}-${datum}.json`;
   const blob = new Blob([JSON.stringify(payload)], { type: 'application/json' });
-  const url  = URL.createObjectURL(blob);
-  Object.assign(document.createElement('a'), {
-    href: url,
-    download: `memofix-${gruppenTeil}-${datum}.json`
-  }).click();
-  URL.revokeObjectURL(url);
+
+  if (window.showSaveFilePicker) {
+    try {
+      const handle = await window.showSaveFilePicker({
+        suggestedName: filename,
+        types: [{ description: 'MemoFix Backup', accept: { 'application/json': ['.json'] } }]
+      });
+      const writable = await handle.createWritable();
+      await writable.write(blob);
+      await writable.close();
+    } catch (err) {
+      if (err.name === 'AbortError') return; // Nutzer hat abgebrochen
+      // Fallback bei unerwartetem Fehler
+      const url = URL.createObjectURL(blob);
+      Object.assign(document.createElement('a'), { href: url, download: filename }).click();
+      URL.revokeObjectURL(url);
+    }
+  } else {
+    // Fallback: Standard-Download (Safari, iOS, Firefox)
+    const url = URL.createObjectURL(blob);
+    Object.assign(document.createElement('a'), { href: url, download: filename }).click();
+    URL.revokeObjectURL(url);
+  }
+
   document.getElementById('export-modal').classList.add('hidden');
   toast(`${exportGruppen.length} Gruppe${exportGruppen.length !== 1 ? 'n' : ''} exportiert`);
 });
