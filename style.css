@@ -931,3 +931,23 @@ textarea.input-vorderseite::placeholder { color: var(--muted); }
   border-top: 1px solid var(--border);
 }
 .karten-sammlung-header:first-child { border-top: none; margin-top: 0; padding-top: 0.1rem; }
+
+/* ── GRUPPE VERSCHIEBEN – Button + Modal ───────────── */
+.btn-gruppe-move-sammlung {
+  background: none; border: none; color: var(--muted);
+  cursor: pointer; padding: 0.2rem 0.3rem;
+  border-radius: 4px; font-size: 0.85rem; line-height: 1;
+}
+.btn-gruppe-move-sammlung:active { color: var(--text); }
+
+.sammlung-auswahl-liste { display: flex; flex-direction: column; gap: 0.4rem; }
+.sammlung-ziel-item {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0.75rem 0.9rem;
+  background: rgba(255,255,255,0.04); border: 1px solid var(--border);
+  border-radius: 12px; cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+}
+.sammlung-ziel-item:active { border-color: rgba(255,255,255,0.35); background: rgba(255,255,255,0.08); }
+.sammlung-ziel-name  { font-weight: 600; font-size: 0.95rem; }
+.sammlung-ziel-count { font-size: 0.78rem; color: var(--muted); }

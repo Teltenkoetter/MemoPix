@@ -189,6 +189,9 @@ async function addGruppeInSammlung(sid, inputEl) {
   toast(`Gruppe „${name}" erstellt`);
 }
 
+// gruppe verschieben
+let gruppeVerschiebenId = null;
+
 // import buffer
 let importDatenBuffer = null;
 
@@ -354,6 +357,7 @@ function renderVerwaltung() {
                 <span class="gruppe-count">${gruppeKartenAnzahl(g.id)} K.</span>
                 <button class="btn-gruppe-move" data-id="${g.id}" data-dir="up" data-sid="${sam.id}"${gi === 0 ? ' disabled' : ''}>▲</button>
                 <button class="btn-gruppe-move" data-id="${g.id}" data-dir="down" data-sid="${sam.id}"${gi === gs.length - 1 ? ' disabled' : ''}>▼</button>
+                <button class="btn-gruppe-move-sammlung" data-id="${g.id}" title="Sammlung wechseln">📁</button>
                 <button class="btn-gruppe-ren" data-id="${g.id}">✏️</button>
                 <button class="btn-gruppe-del" data-id="${g.id}">✕</button>
               </div>`).join('')}
@@ -1071,6 +1075,24 @@ document.getElementById('sammlungen-liste').addEventListener('click', async e =>
     if (inp) await addGruppeInSammlung(addGrpBtn.dataset.sid, inp);
     return;
   }
+  // Gruppe in andere Sammlung verschieben (📁)
+  const moveSammlBtn = e.target.closest('.btn-gruppe-move-sammlung');
+  if (moveSammlBtn) {
+    gruppeVerschiebenId = moveSammlBtn.dataset.id;
+    const g = gruppen.find(x => x.id === gruppeVerschiebenId);
+    document.getElementById('gruppe-verschieben-info').textContent = `„${esc(g.name)}" verschieben nach:`;
+    const andere = getSortierteSammlungen().filter(s => s.id !== g.sammlungId);
+    document.getElementById('sammlung-auswahl-liste').innerHTML = andere.length
+      ? andere.map(s => `
+          <div class="sammlung-ziel-item" data-sid="${s.id}">
+            <span class="sammlung-ziel-name">${esc(s.name)}</span>
+            <span class="sammlung-ziel-count">${sammlungKartenAnzahl(s.id)} K.</span>
+          </div>`).join('')
+      : '<p class="hinweis" style="padding:0.75rem 0">Keine anderen Sammlungen vorhanden.</p>';
+    document.getElementById('gruppe-verschieben-modal').classList.remove('hidden');
+    return;
+  }
+
   // Gruppe verschieben (innerhalb Sammlung)
   const moveBtn = e.target.closest('.btn-gruppe-move');
   if (moveBtn && !moveBtn.disabled) {
@@ -1124,6 +1146,28 @@ document.getElementById('sammlungen-liste').addEventListener('keydown', async e 
   if (e.key !== 'Enter') return;
   const inp = e.target.closest('.input-neue-gruppe-sammlung');
   if (inp) await addGruppeInSammlung(inp.dataset.sid, inp);
+});
+
+// Gruppe verschieben – Modal
+document.getElementById('btn-gruppe-verschieben-close').addEventListener('click', () => {
+  document.getElementById('gruppe-verschieben-modal').classList.add('hidden');
+  gruppeVerschiebenId = null;
+});
+document.getElementById('gruppe-verschieben-modal').addEventListener('click', e => {
+  if (e.target === e.currentTarget) { e.currentTarget.classList.add('hidden'); gruppeVerschiebenId = null; }
+});
+document.getElementById('sammlung-auswahl-liste').addEventListener('click', async e => {
+  const item = e.target.closest('.sammlung-ziel-item');
+  if (!item || !gruppeVerschiebenId) return;
+  const sid = item.dataset.sid;
+  const g   = gruppen.find(x => x.id === gruppeVerschiebenId);
+  const sam = sammlungen.find(x => x.id === sid);
+  g.sammlungId = sid;
+  await dbPut('gruppen', g);
+  document.getElementById('gruppe-verschieben-modal').classList.add('hidden');
+  gruppeVerschiebenId = null;
+  renderVerwaltung();
+  toast(`„${g.name}" → ${sam.name}`);
 });
 
 // Letzte Gruppe merken

@@ -13,7 +13,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=27">
+  <link rel="stylesheet" href="style.css?v=28">
 </head>
 <body>
 
@@ -157,6 +157,20 @@
           <input type="text" id="karte-edit-notiz" maxlength="100" placeholder="Zusatzinfo, erscheint beim Aufdecken…">
         </div>
         <button id="btn-karte-edit-save" class="btn-primary">Speichern</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── GRUPPE VERSCHIEBEN MODAL ─────────────────────── -->
+  <div id="gruppe-verschieben-modal" class="modal-backdrop hidden">
+    <div class="modal">
+      <div class="modal-header">
+        <h2>Gruppe verschieben</h2>
+        <button id="btn-gruppe-verschieben-close" class="btn-modal-close">✕</button>
+      </div>
+      <div class="modal-body">
+        <p class="modal-hint" id="gruppe-verschieben-info"></p>
+        <div id="sammlung-auswahl-liste" class="sammlung-auswahl-liste"></div>
       </div>
     </div>
   </div>
@@ -490,6 +504,6 @@
   </nav>
 
   <div id="toast" class="toast hidden"></div>
-  <script src="app.js?v=27"></script>
+  <script src="app.js?v=28"></script>
 </body>
 </html>
