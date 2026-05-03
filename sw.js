@@ -1,4 +1,4 @@
-const CACHE = 'memopix-v23';
+const CACHE = 'memopix-v25';
 const SHELL = ['./index.html', './style.css', './app.js', './manifest.json', './icon.svg'];
 
 self.addEventListener('install', e => {

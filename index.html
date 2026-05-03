@@ -10,7 +10,10 @@
   <link rel="manifest" href="manifest.json">
   <link rel="apple-touch-icon" href="icon.svg">
   <title>MemoPix</title>
-  <link rel="stylesheet" href="style.css?v=23">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css?v=25">
 </head>
 <body>
 
@@ -32,19 +35,19 @@
           <div class="anleitung-zeilen">
             <div class="anleitung-zeile">
               <span class="anleitung-icon">🖼️</span>
-              <div class="anleitung-text"><strong>Foto-Karte: Bild → Begriff</strong> — Bild sehen, Begriff erinnern · Bild tippen = gewusst (✓)</div>
+              <div class="anleitung-text"><strong>Foto-Karte: Bild → Begriff</strong> — Bild sehen, Begriff erinnern · Karte antippen → dreht sich um → Begriff erscheint (✓)</div>
             </div>
             <div class="anleitung-zeile">
               <span class="anleitung-icon">📝</span>
-              <div class="anleitung-text"><strong>Text-Karte: Definition → Begriff</strong> — Text lesen, Begriff erinnern · Text tippen = gewusst (✓)</div>
+              <div class="anleitung-text"><strong>Text-Karte: Definition → Begriff</strong> — Text lesen, Begriff erinnern · Karte antippen → dreht sich um (✓)</div>
             </div>
             <div class="anleitung-zeile">
               <span class="anleitung-icon">🔄</span>
-              <div class="anleitung-text"><strong>Foto-Karte umgekehrt</strong> — Begriff lesen, Bild vorstellen (Modus „Begriff → Bild")</div>
+              <div class="anleitung-text"><strong>Umgekehrt</strong> — Begriff sehen, Bild/Definition vorstellen (Modus „Begriff → Bild/Text")</div>
             </div>
             <div class="anleitung-zeile">
               <span class="anleitung-icon">🔍</span>
-              <div class="anleitung-text"><strong>„Begriff zeigen"</strong> — Antwort aufdecken, zählt als nachgeschaut (✗)</div>
+              <div class="anleitung-text"><strong>„Begriff zeigen"</strong> — Antwort aufdecken ohne Tippen, zählt als nachgeschaut (✗)</div>
             </div>
             <div class="anleitung-zeile">
               <span class="anleitung-icon">✓✗</span>
@@ -124,7 +127,7 @@
             </div>
           </div>
         </div>
-        <p class="modal-meta">Version 1.6 · Klaus Teltenkötter 2026</p>
+        <p class="modal-meta">Version 1.7 · Klaus Teltenkötter 2026</p>
       </div>
     </div>
   </div>
@@ -307,31 +310,44 @@
       <div id="lernen-flashcard" class="hidden">
         <div class="lern-header">
           <button id="btn-beenden" class="btn-text">✕ Beenden</button>
-          <span id="lern-position">1 / 1</span>
+          <div class="lern-progress-wrap">
+            <div class="lern-progress-track">
+              <div id="lern-progress-fill" class="lern-progress-fill" style="width:0%"></div>
+            </div>
+            <span id="lern-position" class="lern-position-counter">1 / 1</span>
+          </div>
           <button id="btn-mischen" class="btn-text">⇄ Mischen</button>
         </div>
-        <div id="lernkarte" class="lernkarte">
-          <div id="lernkarte-foto-wrapper" class="lernkarte-foto-wrapper">
-            <img id="lern-foto" src="" alt="Foto">
-          </div>
-          <div id="lernkarte-text-vorderseite" class="lernkarte-text-vorderseite hidden">
-            <p id="lern-vorderseite-text"></p>
-            <p id="lern-notiz-text-rueck" class="lern-notiz hidden"></p>
-          </div>
-          <div id="lern-name-karte" class="lern-name-karte hidden">
-            <span id="lern-name-karte-text"></span>
-            <span id="lern-name-karte-gruppe" class="lern-name-karte-gruppe"></span>
-          </div>
-          <div id="lern-name-overlay" class="lern-name-overlay hidden">
-            <span id="lern-name-text"></span>
-            <span id="lern-gruppe-text" class="lern-gruppe-text"></span>
-            <p id="lern-notiz-text" class="lern-notiz hidden"></p>
+        <div class="lern-karte-area">
+          <div id="stack-card-2" class="stack-card stack-card-2"></div>
+          <div id="stack-card-1" class="stack-card stack-card-1"></div>
+          <div id="lernkarte" class="lernkarte">
+            <div id="lernkarte-foto-wrapper" class="lernkarte-foto-wrapper">
+              <img id="lern-foto" src="" alt="Foto">
+            </div>
+            <div id="lernkarte-text-vorderseite" class="lernkarte-text-vorderseite hidden">
+              <p id="lern-vorderseite-text"></p>
+              <p id="lern-notiz-text-rueck" class="lern-notiz hidden"></p>
+            </div>
+            <div id="lern-name-karte" class="lern-name-karte hidden">
+              <span id="lern-name-karte-text"></span>
+              <span id="lern-name-karte-gruppe" class="lern-name-karte-gruppe"></span>
+            </div>
+            <div id="lern-hint-pill" class="lern-hint-pill">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11.24V7.5a2.5 2.5 0 0 1 5 0v3.74M7 11h10l-1 9H8z"/></svg>
+              <span>Tippen zum Aufdecken</span>
+            </div>
+            <div id="lern-name-overlay" class="lern-name-overlay hidden">
+              <span id="lern-name-text"></span>
+              <span id="lern-gruppe-text" class="lern-gruppe-text"></span>
+              <p id="lern-notiz-text" class="lern-notiz hidden"></p>
+            </div>
           </div>
         </div>
         <div class="lern-steuerung">
           <button id="btn-zurueck" class="btn-nav">&#8592;</button>
           <div class="mitte-bereich">
-            <button id="btn-aufdecken" class="btn-aufdecken">Name zeigen</button>
+            <button id="btn-aufdecken" class="btn-aufdecken">Begriff zeigen</button>
             <div id="lern-feedback" class="lern-feedback hidden"></div>
           </div>
           <button id="btn-weiter" class="btn-nav">&#8594;</button>
@@ -469,6 +485,6 @@
   </nav>
 
   <div id="toast" class="toast hidden"></div>
-  <script src="app.js?v=23"></script>
+  <script src="app.js?v=25"></script>
 </body>
 </html>

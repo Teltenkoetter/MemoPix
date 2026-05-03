@@ -81,6 +81,7 @@ let gewusst            = 0;
 let nichtGewusst       = 0;
 let lernModus          = 'foto'; // 'foto' = Foto→Name, 'name' = Name→Foto
 let aktuelleWertung    = null;   // 'gewusst' | 'nicht' – aktuell angezeigte Karte
+let isAnimating        = false;  // verhindert Doppel-Klick während Flip/Fly-out
 const answeredIds     = new Set();
 const gewusstIds      = new Set();
 const nichtGewusstIds = new Set();
@@ -131,6 +132,21 @@ function zeigeFeedback(typ) {
   const fb = document.getElementById('lern-feedback');
   fb.textContent = typ === 'gewusst' ? '✓' : '✗';
   fb.className = 'lern-feedback ' + (typ === 'gewusst' ? 'gewusst-ok' : 'nicht-ok');
+}
+
+// 3D-Flip: Karte faltet zur Kante (90°), Content-Tausch, zurück (0°)
+function triggerFlip(wertung) {
+  if (isAnimating || nameVisible) return;
+  isAnimating = true;
+  const card = document.getElementById('lernkarte');
+  card.style.transition = 'transform 0.32s cubic-bezier(0.4, 0, 0.2, 1)';
+  card.style.transform  = 'perspective(1600px) rotateY(90deg)';
+  card.addEventListener('transitionend', function handler() {
+    card.removeEventListener('transitionend', handler);
+    zeigeName(wertung);                                   // Content-Tausch am unsichtbaren Punkt
+    card.style.transform = 'perspective(1600px) rotateY(0deg)';
+    setTimeout(() => { isAnimating = false; }, 320);      // Rückseite fertig eingedreht
+  }, { once: true });
 }
 
 // ============================================================
@@ -490,21 +506,45 @@ async function speichereSitzung() {
 function zeigeKarte() {
   nameVisible     = false;
   aktuelleWertung = null;
+  isAnimating     = false;
+
+  // Karte zurücksetzen (Flip + Fly-out entfernen, ohne sichtbare Transition)
+  const card = document.getElementById('lernkarte');
+  card.style.transition = 'none';
+  card.style.transform  = '';
+  card.classList.remove('fly-out-up', 'fly-out-down');
+  document.getElementById('stack-card-1').classList.remove('stack-advance-1');
+  document.getElementById('stack-card-2').classList.remove('stack-advance-2');
+  void card.offsetWidth; // force reflow
+  card.style.transition = '';
+
   document.getElementById('lern-name-overlay').classList.add('hidden');
   document.getElementById('lern-feedback').className = 'lern-feedback hidden';
   document.getElementById('btn-aufdecken').style.visibility = '';
+  document.getElementById('lern-hint-pill').classList.remove('hidden');
 
   const s           = lernKarten[lernIndex];
   const gruppe      = gruppen.find(g => g.id === s.gruppeId);
   const gName       = gruppe ? gruppe.name : '';
   const kartenModus = s.modus || 'foto';
+  const total       = lernKarten.length;
 
   document.getElementById('lern-name-text').textContent         = s.name;
   document.getElementById('lern-gruppe-text').textContent       = gName;
   document.getElementById('lern-name-karte-gruppe').textContent = gName;
-  document.getElementById('lern-position').textContent          = `${lernIndex + 1} / ${lernKarten.length}`;
+
+  // Fortschrittsbalken + Counter
+  const answered = answeredIds.size;
+  document.getElementById('lern-progress-fill').style.width = total > 0 ? (answered / total * 100) + '%' : '0%';
+  document.getElementById('lern-position').innerHTML =
+    `${lernIndex + 1}<span class="counter-total"> / ${total}</span>`;
+
+  // Stapel: Ghost-Karten nur wenn Karten dahinter vorhanden
+  document.getElementById('stack-card-1').style.display = lernIndex + 1 < total ? '' : 'none';
+  document.getElementById('stack-card-2').style.display = lernIndex + 2 < total ? '' : 'none';
+
   document.getElementById('btn-zurueck').classList.toggle('invisible', lernIndex === 0);
-  document.getElementById('btn-weiter').classList.toggle('invisible', lernIndex === lernKarten.length - 1);
+  document.getElementById('btn-weiter').classList.toggle('invisible', lernIndex === total - 1);
 
   // Alle Anzeigebereiche zurücksetzen
   document.getElementById('lernkarte-foto-wrapper').classList.add('hidden');
@@ -578,13 +618,32 @@ function zeigeName(wertung) {
     if (s.notiz) { notizEl.textContent = s.notiz; notizEl.classList.remove('hidden'); }
     else { notizEl.classList.add('hidden'); }
   }
+  // Hint Pill verstecken, Fortschrittsbalken aktualisieren
+  document.getElementById('lern-hint-pill').classList.add('hidden');
+  const total = lernKarten.length;
+  document.getElementById('lern-progress-fill').style.width =
+    total > 0 ? (answeredIds.size / total * 100) + '%' : '0%';
+
   document.getElementById('btn-aufdecken').style.visibility = 'hidden';
   zeigeFeedback(wertung === 'gewusst' ? 'gewusst' : 'nicht');
 }
 
 function naechsteKarteOderEnde() {
-  if (lernIndex < lernKarten.length - 1) { lernIndex++; zeigeKarte(); }
-  else { zeigeEnde(); }
+  if (lernIndex < lernKarten.length - 1) {
+    if (aktuelleWertung && !isAnimating) {
+      isAnimating = true;
+      const card = document.getElementById('lernkarte');
+      const animClass = aktuelleWertung === 'gewusst' ? 'fly-out-up' : 'fly-out-down';
+      card.classList.add(animClass);
+      document.getElementById('stack-card-1').classList.add('stack-advance-1');
+      document.getElementById('stack-card-2').classList.add('stack-advance-2');
+      setTimeout(() => { lernIndex++; zeigeKarte(); }, 450);
+    } else if (!isAnimating) {
+      lernIndex++; zeigeKarte();
+    }
+  } else {
+    zeigeEnde();
+  }
 }
 
 async function zeigeEnde() {
@@ -603,9 +662,11 @@ function starteSession(karten, shuffle = true) {
   lernIndex    = 0;
   gewusst      = 0;
   nichtGewusst = 0;
+  isAnimating  = false;
   answeredIds.clear();
   gewusstIds.clear();
   nichtGewusstIds.clear();
+  document.getElementById('lern-progress-fill').style.width = '0%';
   document.getElementById('lernen-ende').classList.add('hidden');
   document.getElementById('lernen-flashcard').classList.remove('hidden');
   zeigeKarte();
@@ -1042,21 +1103,20 @@ document.getElementById('btn-lernen-start').addEventListener('click', () => {
   starteSession(karten, !isTutorial);
 });
 
-// Foto / Name-Karte klicken = Gewusst → weiter
-// 1. Klick = Name + ✓ (gewusst), 2. Klick = weiter
+// Karte antippen: 1. Klick = 3D-Flip + ✓ (gewusst), 2. Klick = Fly-out + weiter
 document.getElementById('lernkarte').addEventListener('click', () => {
   if (!nameVisible) {
-    zeigeName('gewusst');       // Name + grüner Haken sofort
-  } else {
-    naechsteKarteOderEnde();   // 2. Klick = direkt weiter
+    triggerFlip('gewusst');
+  } else if (!isAnimating) {
+    naechsteKarteOderEnde();
   }
 });
 
-// Button: Name zeigen = Nicht gewusst ✗ (rotes Kreuz)
+// Button „Begriff zeigen" = Flip + ✗ (nicht gewusst)
 document.getElementById('btn-aufdecken').addEventListener('click', e => {
   e.stopPropagation();
   if (!nameVisible) {
-    zeigeName('nicht-gewusst'); // Name + rotes ✗, zählt als nicht gewusst
+    triggerFlip('nicht-gewusst');
   }
 });
 
@@ -1328,7 +1388,7 @@ async function erstelleTutorialGruppeWennNeu() {
     },
     {
       id: 'tut-2', name: 'Tippen · Werten · Weiter',
-      svg: `<svg viewBox="0 0 360 480" xmlns="http://www.w3.org/2000/svg"><rect width="360" height="480" fill="#111"/><g transform="translate(180,155)"><ellipse cx="0" cy="-60" rx="22" ry="28" fill="#333"/><rect x="-22" y="-35" width="44" height="55" rx="8" fill="#333"/><rect x="-40" y="8" width="80" height="14" rx="7" fill="#2a2a2a"/><circle cx="0" cy="-60" r="38" fill="none" stroke="#444" stroke-width="2" opacity="0.6"/><circle cx="0" cy="-60" r="52" fill="none" stroke="#333" stroke-width="1.5" opacity="0.4"/></g><text x="100" y="220" text-anchor="middle" font-size="28" fill="#4caf50">✓</text><text x="260" y="220" text-anchor="middle" font-size="28" fill="#cc4444">✗</text><line x1="30" y1="250" x2="330" y2="250" stroke="#222" stroke-width="1"/><text x="180" y="278" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="12" font-weight="700" fill="#f0f0f0">So lernst du:</text><text x="50" y="304" font-family="-apple-system,sans-serif" font-size="11" fill="#4caf50">①</text><text x="68" y="304" font-family="-apple-system,sans-serif" font-size="11" fill="#aaa">Bild/Text tippen → Begriff + ✓</text><text x="50" y="326" font-family="-apple-system,sans-serif" font-size="11" fill="#cc4444">②</text><text x="68" y="326" font-family="-apple-system,sans-serif" font-size="11" fill="#aaa">„Begriff zeigen" → ✗ nachgeschaut</text><text x="50" y="348" font-family="-apple-system,sans-serif" font-size="11" fill="#888">③</text><text x="68" y="348" font-family="-apple-system,sans-serif" font-size="11" fill="#666">← → Pfeile = Blättern ohne Wertung</text><text x="180" y="386" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="10" fill="#555">Nochmal tippen = nächste Karte</text></svg>`
+      svg: `<svg viewBox="0 0 360 480" xmlns="http://www.w3.org/2000/svg"><rect width="360" height="480" fill="#111"/><rect x="100" y="70" width="160" height="110" rx="14" fill="#1a1a1a" stroke="#2a2a2a" stroke-width="1.5"/><rect x="115" y="82" width="60" height="86" rx="6" fill="#252525"/><circle cx="145" cy="108" r="14" fill="#333"/><rect x="186" y="82" width="60" height="86" rx="6" fill="#333"/><text x="216" y="118" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="9" fill="#888">Begriff</text><line x1="192" y1="127" x2="240" y2="127" stroke="#444" stroke-width="1.5" stroke-linecap="round"/><line x1="192" y1="138" x2="230" y2="138" stroke="#333" stroke-width="1" stroke-linecap="round"/><path d="M180 125 Q180 115 172 112" fill="none" stroke="#4a4a4a" stroke-width="2" stroke-linecap="round"/><text x="180" y="204" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="10" fill="#555">↻ dreht sich um</text><line x1="30" y1="220" x2="330" y2="220" stroke="#1e1e1e" stroke-width="1"/><text x="180" y="246" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="12" font-weight="700" fill="#f0f0f0">So lernst du:</text><text x="50" y="272" font-family="-apple-system,sans-serif" font-size="11" fill="#aaa">①</text><text x="68" y="272" font-family="-apple-system,sans-serif" font-size="11" fill="#aaa">Karte antippen → dreht sich um → ✓</text><text x="50" y="294" font-family="-apple-system,sans-serif" font-size="11" fill="#aaa">②</text><text x="68" y="294" font-family="-apple-system,sans-serif" font-size="11" fill="#aaa">„Begriff zeigen" → Flip → ✗ nachgeschaut</text><text x="50" y="316" font-family="-apple-system,sans-serif" font-size="11" fill="#666">③</text><text x="68" y="316" font-family="-apple-system,sans-serif" font-size="11" fill="#666">✓ oder ✗ antippen → Wertung korrigieren</text><text x="50" y="338" font-family="-apple-system,sans-serif" font-size="11" fill="#555">④</text><text x="68" y="338" font-family="-apple-system,sans-serif" font-size="11" fill="#555">← → Pfeile = Blättern ohne Wertung</text><text x="180" y="374" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="10" fill="#444">Nochmal tippen = nächste Karte</text></svg>`
     },
     {
       id: 'tut-3', name: 'Gruppen & Karten',
