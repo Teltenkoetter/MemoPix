@@ -307,6 +307,21 @@ textarea.input-vorderseite::placeholder { color: var(--muted); }
 }
 .lernkarte-text-vorderseite p {
   font-size: 1.05rem; line-height: 1.65; color: var(--text);
+  font-family: 'Inter', sans-serif; font-style: normal;
+}
+.lern-vorderseite-liste {
+  list-style: none; padding: 0; margin: 0;
+  text-align: left; width: 100%; max-width: 340px;
+}
+.lern-vorderseite-liste li {
+  display: flex; align-items: baseline; gap: 0.55rem;
+  font-size: 1rem; line-height: 1.6; color: var(--text);
+  font-family: 'Inter', sans-serif; font-style: normal;
+  padding: 0.1rem 0;
+}
+.lern-vorderseite-liste li::before {
+  content: '•';
+  color: var(--text); font-size: 1.1rem; flex-shrink: 0; opacity: 0.5;
 }
 
 /* ── NOTIZ ─────────────────────────────────────────── */
@@ -453,6 +468,8 @@ textarea.input-vorderseite::placeholder { color: var(--muted); }
   cursor: pointer; width: 100%; height: 100%;
 }
 .karte-name { flex: 1; font-weight: 600; font-size: 0.9rem; min-width: 0; }
+.karte-detail-trigger { cursor: zoom-in; }
+.karte-name.karte-detail-trigger:hover { text-decoration: underline; text-underline-offset: 2px; }
 .btn-karte-ren, .btn-karte-copy, .btn-karte-del {
   background: none; border: none; color: var(--muted);
   cursor: pointer; padding: 0.25rem 0.35rem;
@@ -632,9 +649,9 @@ textarea.input-vorderseite::placeholder { color: var(--muted); }
   cursor: pointer;
 }
 .lern-name-karte span:first-child {
-  font-family: var(--serif);
-  font-style: italic;
-  font-size: 2rem; font-weight: 400;
+  font-family: 'Inter', sans-serif;
+  font-style: normal;
+  font-size: 1.9rem; font-weight: 800;
   color: var(--text); text-align: center;
   line-height: 1.2; word-break: break-word;
 }
@@ -851,6 +868,72 @@ textarea.input-vorderseite::placeholder { color: var(--muted); }
   position: absolute; inset: 6px;
   background: rgba(255,255,255,0.06);
   border-radius: 16px;
+}
+
+/* ── KARTE DETAIL OVERLAY ──────────────────────────── */
+.karte-detail-overlay {
+  position: fixed; inset: 0; z-index: 600;
+  background: rgba(0,0,0,0.92);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  display: flex; align-items: center; justify-content: center;
+  padding: 1.5rem;
+  animation: kdFadeIn 0.2s ease;
+  cursor: pointer;
+}
+.karte-detail-overlay.hidden { display: none; }
+@keyframes kdFadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+.karte-detail-inner {
+  display: flex; flex-direction: column; align-items: center;
+  gap: 1.25rem; max-width: 420px; width: 100%;
+  animation: kdSlideUp 0.22s ease;
+}
+@keyframes kdSlideUp {
+  from { transform: translateY(16px); opacity: 0; }
+  to   { transform: translateY(0);    opacity: 1; }
+}
+.karte-detail-foto-wrap {
+  width: 100%; border-radius: 18px; overflow: hidden;
+  background: rgba(255,255,255,0.04);
+  max-height: 60dvh;
+  display: flex; align-items: center; justify-content: center;
+}
+.karte-detail-foto-wrap img {
+  width: 100%; max-height: 60dvh;
+  object-fit: contain; display: block;
+  border-radius: 18px;
+}
+.karte-detail-text-wrap {
+  width: 100%; background: rgba(255,255,255,0.04);
+  border: 1px solid var(--border); border-radius: 18px;
+  padding: 1.5rem; min-height: 120px;
+  display: flex; align-items: center; justify-content: center;
+}
+.karte-detail-text-wrap .lern-vorderseite-liste { max-width: 100%; }
+.karte-detail-text-wrap p {
+  font-size: 1.05rem; line-height: 1.65; color: var(--text);
+  font-family: 'Inter', sans-serif; text-align: center;
+}
+.karte-detail-meta {
+  display: flex; flex-direction: column; align-items: center; gap: 0.3rem;
+  text-align: center;
+}
+.karte-detail-name {
+  font-family: 'Inter', sans-serif; font-weight: 800;
+  font-size: 1.4rem; color: var(--text); line-height: 1.2;
+}
+.karte-detail-gruppe {
+  font-size: 0.7rem; font-weight: 700; color: var(--muted);
+  text-transform: uppercase; letter-spacing: 0.6px;
+}
+.karte-detail-notiz {
+  font-size: 0.82rem; color: var(--muted); line-height: 1.5;
+  padding-top: 0.4rem;
+  border-top: 1px solid var(--border);
+  width: 100%;
 }
 
 /* ── TOAST ─────────────────────────────────────────── */

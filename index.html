@@ -13,7 +13,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=32">
+  <link rel="stylesheet" href="style.css?v=34">
 </head>
 <body>
 
@@ -506,7 +506,24 @@
     </button>
   </nav>
 
+  <!-- ── KARTE DETAIL OVERLAY ──────────────────────────── -->
+  <div id="karte-detail-overlay" class="karte-detail-overlay hidden" role="dialog" aria-modal="true">
+    <div class="karte-detail-inner">
+      <div id="karte-detail-foto-wrap" class="karte-detail-foto-wrap">
+        <img id="karte-detail-foto" src="" alt="">
+      </div>
+      <div id="karte-detail-text-wrap" class="karte-detail-text-wrap hidden">
+        <div id="karte-detail-text"></div>
+      </div>
+      <div class="karte-detail-meta">
+        <span id="karte-detail-name" class="karte-detail-name"></span>
+        <span id="karte-detail-gruppe" class="karte-detail-gruppe"></span>
+        <span id="karte-detail-notiz" class="karte-detail-notiz hidden"></span>
+      </div>
+    </div>
+  </div>
+
   <div id="toast" class="toast hidden"></div>
-  <script src="app.js?v=32"></script>
+  <script src="app.js?v=34"></script>
 </body>
 </html>

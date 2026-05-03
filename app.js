@@ -334,10 +334,47 @@ async function getSchwacheKarten(gruppeIds = null) {
 // RENDER – VERWALTUNG
 // ============================================================
 
+// Mehrzeiligen Text als Bullet-Liste oder einfachen Absatz rendern
+function renderVorderseiteHtml(text) {
+  if (!text) return '';
+  const zeilen = text.split('\n').map(z => z.trim()).filter(z => z.length > 0);
+  if (zeilen.length <= 1) return `<p>${esc(text.trim())}</p>`;
+  return `<ul class="lern-vorderseite-liste">${zeilen.map(z => `<li>${esc(z)}</li>`).join('')}</ul>`;
+}
+
+function openKarteDetailOverlay(id) {
+  const s = studenten.find(x => x.id === id);
+  if (!s) return;
+  const isText = s.modus === 'text';
+  const overlay   = document.getElementById('karte-detail-overlay');
+  const fotoWrap  = document.getElementById('karte-detail-foto-wrap');
+  const textWrap  = document.getElementById('karte-detail-text-wrap');
+  const fotoImg   = document.getElementById('karte-detail-foto');
+  const textEl    = document.getElementById('karte-detail-text');
+  const nameEl    = document.getElementById('karte-detail-name');
+  const gruppeEl  = document.getElementById('karte-detail-gruppe');
+  const notizEl   = document.getElementById('karte-detail-notiz');
+
+  if (isText) {
+    fotoWrap.classList.add('hidden');
+    textEl.innerHTML = renderVorderseiteHtml(s.vorderseite || '');
+    textWrap.classList.remove('hidden');
+  } else {
+    textWrap.classList.add('hidden');
+    fotoImg.src = getFotoUrl(s);
+    fotoWrap.classList.remove('hidden');
+  }
+  nameEl.textContent   = s.name;
+  gruppeEl.textContent = gruppen.find(g => g.id === s.gruppeId)?.name || '';
+  if (s.notiz) { notizEl.textContent = s.notiz; notizEl.classList.remove('hidden'); }
+  else { notizEl.classList.add('hidden'); }
+  overlay.classList.remove('hidden');
+}
+
 function karteItemHtml(s) {
   const isText = s.modus === 'text';
   const thumb = isText
-    ? `<div class="karte-text-thumb">${esc((s.vorderseite || '').substring(0, 40))}${(s.vorderseite || '').length > 40 ? '…' : ''}</div>`
+    ? `<div class="karte-text-thumb karte-detail-trigger" data-id="${s.id}">${esc((s.vorderseite || '').substring(0, 40))}${(s.vorderseite || '').length > 40 ? '…' : ''}</div>`
     : `<img src="${getFotoUrl(s)}" alt="${esc(s.name)}" loading="lazy">
        <div class="karte-foto-overlay">📷</div>
        <input type="file" accept="image/*" class="karte-foto-input" data-id="${s.id}">`;
@@ -346,7 +383,7 @@ function karteItemHtml(s) {
       <div class="karte-foto-wrapper">
         ${thumb}
       </div>
-      <span class="karte-name">${esc(s.name)}${s.notiz ? ' <span style="opacity:.45;font-size:.7rem">📝</span>' : ''}</span>
+      <span class="karte-name karte-detail-trigger" data-id="${s.id}">${esc(s.name)}${s.notiz ? ' <span style="opacity:.45;font-size:.7rem">📝</span>' : ''}</span>
       <button class="btn-karte-ren"  data-id="${s.id}" title="Bearbeiten">✏️</button>
       <button class="btn-karte-copy" data-id="${s.id}" title="Kopieren">📋</button>
       <button class="btn-karte-del"  data-id="${s.id}" title="Löschen">✕</button>
@@ -790,7 +827,7 @@ function zeigeKarte() {
 
   if (kartenModus === 'text' && lernModus === 'name') {
     // Begriff-Karte UMGEKEHRT: Info/Definition vorne → Begriff aufdecken
-    document.getElementById('lern-vorderseite-text').textContent = s.vorderseite || '';
+    document.getElementById('lern-vorderseite-text').innerHTML = renderVorderseiteHtml(s.vorderseite || '');
     document.getElementById('lernkarte-text-vorderseite').classList.remove('hidden');
     aufdeckBtn.textContent = 'Begriff zeigen';
   } else if (kartenModus === 'text') {
@@ -831,7 +868,7 @@ function zeigeName(wertung) {
   } else if (kartenModus === 'text') {
     // Begriff-Karte normal aufdecken: Info/Definition anzeigen (Begriff war vorne)
     document.getElementById('lern-name-karte').classList.add('hidden');
-    document.getElementById('lern-vorderseite-text').textContent = s.vorderseite || '';
+    document.getElementById('lern-vorderseite-text').innerHTML = renderVorderseiteHtml(s.vorderseite || '');
     document.getElementById('lernkarte-text-vorderseite').classList.remove('hidden');
     const notizRueck = document.getElementById('lern-notiz-text-rueck');
     if (s.notiz) { notizRueck.textContent = s.notiz; notizRueck.classList.remove('hidden'); }
@@ -1329,6 +1366,20 @@ document.getElementById('form-karte').addEventListener('submit', async e => {
 });
 
 // Gruppe aufklappen / zuklappen
+// Karte Detail Overlay öffnen (Thumbnail oder Kartenname)
+document.getElementById('karten-nach-gruppen').addEventListener('click', e => {
+  const trigger = e.target.closest('.karte-detail-trigger');
+  if (trigger && !e.target.closest('button')) {
+    openKarteDetailOverlay(trigger.dataset.id);
+    return;
+  }
+});
+
+// Overlay schließen per Tap
+document.getElementById('karte-detail-overlay').addEventListener('click', () => {
+  document.getElementById('karte-detail-overlay').classList.add('hidden');
+});
+
 document.getElementById('karten-nach-gruppen').addEventListener('click', e => {
   const header = e.target.closest('.gruppe-karten-header');
   if (!header) return;
