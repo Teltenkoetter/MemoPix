@@ -13,7 +13,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=38">
+  <link rel="stylesheet" href="style.css?v=39">
 </head>
 <body>
 
@@ -245,6 +245,25 @@
       </div>
 
       <div class="card">
+        <div class="card-header">
+          <h2>Alle Karten</h2>
+          <span id="karten-gesamt" class="badge">0</span>
+          <button id="btn-toggle-alle-gruppen" class="btn-gruppen-toggle">Alle öffnen</button>
+        </div>
+        <div class="karten-filter">
+          <input type="text" id="input-karten-suche" placeholder="🔍 Namen suchen…" class="karten-suche">
+          <select id="select-karten-sort" class="karten-sort">
+            <option value="neu">Neueste zuerst</option>
+            <option value="az">A → Z</option>
+            <option value="za">Z → A</option>
+            <option value="gruppe">Nach Gruppe</option>
+          </select>
+        </div>
+        <div id="karten-nach-gruppen"></div>
+        <p id="keine-karten-hinweis" class="hinweis">Noch keine Karten vorhanden.</p>
+      </div>
+
+      <div class="card">
         <div class="card-header"><h2>Karte hinzufügen</h2></div>
         <form id="form-karte">
           <div class="form-group">
@@ -283,25 +302,6 @@
           </div>
           <button type="submit" id="btn-karte-speichern" class="btn-primary">Karte speichern</button>
         </form>
-      </div>
-
-      <div class="card">
-        <div class="card-header">
-          <h2>Alle Karten</h2>
-          <span id="karten-gesamt" class="badge">0</span>
-          <button id="btn-toggle-alle-gruppen" class="btn-gruppen-toggle">Alle öffnen</button>
-        </div>
-        <div class="karten-filter">
-          <input type="text" id="input-karten-suche" placeholder="🔍 Namen suchen…" class="karten-suche">
-          <select id="select-karten-sort" class="karten-sort">
-            <option value="neu">Neueste zuerst</option>
-            <option value="az">A → Z</option>
-            <option value="za">Z → A</option>
-            <option value="gruppe">Nach Gruppe</option>
-          </select>
-        </div>
-        <div id="karten-nach-gruppen"></div>
-        <p id="keine-karten-hinweis" class="hinweis">Noch keine Karten vorhanden.</p>
       </div>
 
     </section>
@@ -538,6 +538,6 @@
   </div>
 
   <div id="toast" class="toast hidden"></div>
-  <script src="app.js?v=38"></script>
+  <script src="app.js?v=39"></script>
 </body>
 </html>

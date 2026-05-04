@@ -129,6 +129,14 @@ header h1 { font-size: 1rem; letter-spacing: 0.2px; color: var(--text); }
 
 /* Modal group check list (export) */
 .modal-check-liste { display: flex; flex-direction: column; gap: 0.4rem; margin-bottom: 0.25rem; }
+.export-sammlung-header {
+  font-size: 0.67rem; font-weight: 700; color: var(--muted);
+  text-transform: uppercase; letter-spacing: 0.6px;
+  padding: 0.55rem 0.1rem 0.15rem;
+  margin-top: 0.25rem;
+  border-top: 1px solid var(--border);
+}
+.export-sammlung-header:first-child { border-top: none; margin-top: 0; }
 
 /* Import modal */
 .import-gruppen-info { margin-bottom: 0.75rem; }

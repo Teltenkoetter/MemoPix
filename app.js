@@ -1725,14 +1725,33 @@ document.getElementById('btn-statistik-loeschen').addEventListener('click', asyn
 document.getElementById('btn-export').addEventListener('click', () => {
   if (!gruppen.length) { toast('Keine Gruppen vorhanden'); return; }
   const container = document.getElementById('export-gruppen-liste');
-  container.innerHTML = getSortierteGruppen().map(g => `
-    <div class="gruppe-check-item selected" data-gid="${g.id}">
+
+  function gruppeItemHtml(g) {
+    const n = gruppeKartenAnzahl(g.id);
+    return `<div class="gruppe-check-item selected" data-gid="${g.id}">
       <div class="check-box" style="background:var(--accent);border-color:var(--accent);color:#000">✓</div>
       <div class="check-label">
         <strong>${esc(g.name)}</strong>
-        <span>${gruppeKartenAnzahl(g.id)} Karte${gruppeKartenAnzahl(g.id) !== 1 ? 'n' : ''}</span>
+        <span>${n} Karte${n !== 1 ? 'n' : ''}</span>
       </div>
-    </div>`).join('');
+    </div>`;
+  }
+
+  // Nach Sammlungen gegliedert
+  let html = '';
+  getSortierteSammlungen().forEach(sam => {
+    const gs = getSortierteGruppenInSammlung(sam.id);
+    if (!gs.length) return;
+    html += `<div class="export-sammlung-header">${esc(sam.name)}</div>`;
+    html += gs.map(gruppeItemHtml).join('');
+  });
+  // Orphan-Gruppen
+  const orphans = gruppen.filter(g => !g.sammlungId || !sammlungen.find(s => s.id === g.sammlungId));
+  if (orphans.length) {
+    html += `<div class="export-sammlung-header" style="opacity:.55">Ohne Sammlung</div>`;
+    html += orphans.map(gruppeItemHtml).join('');
+  }
+  container.innerHTML = html;
 
   container.querySelectorAll('.gruppe-check-item').forEach(item => {
     item.addEventListener('click', () => {
@@ -1746,7 +1765,6 @@ document.getElementById('btn-export').addEventListener('click', () => {
     });
   });
   document.getElementById('export-modal').classList.remove('hidden');
-  // iOS-Hinweis nur anzeigen, wenn kein nativer Speicherdialog verfügbar
   document.getElementById('export-ios-hinweis').classList.toggle('hidden', !!window.showSaveFilePicker);
 });
 
