@@ -998,17 +998,31 @@ function openKarteEditModal(studentId, mode) {
   const s = studenten.find(x => x.id === studentId);
 
   document.getElementById('karte-edit-titel').textContent = mode === 'copy' ? 'Karte kopieren' : 'Karte bearbeiten';
-  document.getElementById('karte-edit-name-label').textContent = s.modus === 'text' ? 'Begriff' : 'Name';
   document.getElementById('karte-edit-name').value  = s.name;
   document.getElementById('karte-edit-notiz').value = s.notiz || '';
 
-  // Vorderseite nur für Text-Karten anzeigen
-  const vGruppe = document.getElementById('karte-edit-vorderseite-gruppe');
+  // Typ-Chips setzen
+  const isFoto = s.modus !== 'text';
+  document.getElementById('karte-edit-chip-foto').classList.toggle('active', isFoto);
+  document.getElementById('karte-edit-chip-text').classList.toggle('active', !isFoto);
+  document.getElementById('karte-edit-name-label').textContent = isFoto ? 'Name' : 'Begriff';
+
+  // Felder ein-/ausblenden
+  document.getElementById('karte-edit-foto-gruppe').classList.toggle('hidden', !isFoto);
+  document.getElementById('karte-edit-vorderseite-gruppe').classList.toggle('hidden', isFoto);
+
+  // Foto-Vorschau zurücksetzen
+  document.getElementById('karte-edit-foto-input').value = '';
+  const vorschau = document.getElementById('karte-edit-foto-vorschau');
+  if (isFoto && s.foto) {
+    vorschau.src = getFotoUrl(s);
+    vorschau.classList.remove('hidden');
+  } else {
+    vorschau.src = '';
+    vorschau.classList.add('hidden');
+  }
   if (s.modus === 'text') {
     document.getElementById('karte-edit-vorderseite').value = s.vorderseite || '';
-    vGruppe.classList.remove('hidden');
-  } else {
-    vGruppe.classList.add('hidden');
   }
 
   const sel = document.getElementById('karte-edit-gruppe');
@@ -1114,7 +1128,28 @@ document.getElementById('info-modal').addEventListener('click', e => {
   if (e.target === e.currentTarget) e.currentTarget.classList.add('hidden');
 });
 
-// Karte-Edit-Modal
+// Karte-Edit-Modal – Typ-Chips
+function karteEditSetModus(isFoto) {
+  document.getElementById('karte-edit-chip-foto').classList.toggle('active', isFoto);
+  document.getElementById('karte-edit-chip-text').classList.toggle('active', !isFoto);
+  document.getElementById('karte-edit-name-label').textContent = isFoto ? 'Name' : 'Begriff';
+  document.getElementById('karte-edit-foto-gruppe').classList.toggle('hidden', !isFoto);
+  document.getElementById('karte-edit-vorderseite-gruppe').classList.toggle('hidden', isFoto);
+}
+document.getElementById('karte-edit-chip-foto').addEventListener('click', () => karteEditSetModus(true));
+document.getElementById('karte-edit-chip-text').addEventListener('click', () => karteEditSetModus(false));
+document.getElementById('karte-edit-foto-input').addEventListener('change', e => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    const v = document.getElementById('karte-edit-foto-vorschau');
+    v.src = ev.target.result;
+    v.classList.remove('hidden');
+  };
+  reader.readAsDataURL(file);
+});
+
 document.getElementById('btn-karte-edit-close').addEventListener('click', () =>
   document.getElementById('karte-edit-modal').classList.add('hidden'));
 document.getElementById('karte-edit-modal').addEventListener('click', e => {
@@ -1146,16 +1181,39 @@ document.getElementById('btn-karte-edit-save').addEventListener('click', async (
     studenten.push(newS);
     toast(`Karte kopiert: „${name}"`);
   } else {
-    const s    = studenten.find(x => x.id === editModalStudentId);
-    const foto = s.foto;
+    const s       = studenten.find(x => x.id === editModalStudentId);
+    const newModus = document.getElementById('karte-edit-chip-foto').classList.contains('active') ? 'foto' : 'text';
+    const fotoFile = document.getElementById('karte-edit-foto-input').files[0];
+
+    // Moduswechsel text → foto: Foto erforderlich (oder noch kein Foto vorhanden)
+    if (newModus === 'foto' && !fotoFile && !s.foto) {
+      toast('Bitte ein Foto auswählen.'); return;
+    }
+
     s.name     = name;
     s.gruppeId = gruppeId;
     s.notiz    = notiz;
-    if (s.modus === 'text') {
+
+    if (newModus === 'text') {
+      s.modus       = 'text';
       s.vorderseite = document.getElementById('karte-edit-vorderseite').value.trim();
+      s.foto        = null;
+      if (urlCache.has(s.id)) { URL.revokeObjectURL(urlCache.get(s.id)); urlCache.delete(s.id); }
+    } else {
+      s.modus       = 'foto';
+      s.vorderseite = '';
+      if (fotoFile) {
+        const blob = await new Promise(res => {
+          const r = new FileReader();
+          r.onload = ev => res(new Blob([ev.target.result], { type: fotoFile.type }));
+          r.readAsArrayBuffer(fotoFile);
+        });
+        if (urlCache.has(s.id)) { URL.revokeObjectURL(urlCache.get(s.id)); urlCache.delete(s.id); }
+        s.foto = blob;
+      }
     }
+
     await dbPut('studenten', s);
-    s.foto = foto;
     toast(`Karte aktualisiert: „${name}"`);
   }
   document.getElementById('karte-edit-modal').classList.add('hidden');
