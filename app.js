@@ -1420,27 +1420,47 @@ document.getElementById('karten-nach-gruppen').addEventListener('click', e => {
 // Overlay: Swipe + Tap-zum-Schließen
 (function() {
   const overlay = document.getElementById('karte-detail-overlay');
+  const inner   = document.getElementById('karte-detail-inner');
   let touchStartX = 0, touchStartY = 0, touchMoved = false;
 
   overlay.addEventListener('touchstart', e => {
     touchStartX = e.touches[0].clientX;
     touchStartY = e.touches[0].clientY;
     touchMoved  = false;
+    inner.style.transition = 'none';
   }, { passive: true });
 
   overlay.addEventListener('touchmove', e => {
-    touchMoved = Math.abs(e.touches[0].clientX - touchStartX) > 8;
+    const dx = e.touches[0].clientX - touchStartX;
+    const dy = e.touches[0].clientY - touchStartY;
+    if (Math.abs(dx) > 8) touchMoved = true;
+    if (Math.abs(dx) > Math.abs(dy) * 1.2) {
+      inner.style.transform = `translateX(${dx * 0.35}px) rotate(${dx * 0.018}deg)`;
+    }
   }, { passive: true });
 
   overlay.addEventListener('touchend', e => {
     const dx = e.changedTouches[0].clientX - touchStartX;
     const dy = e.changedTouches[0].clientY - touchStartY;
+    inner.style.transition = 'transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94)';
+
     if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) * 1.5) {
-      // Horizontaler Swipe
-      detailNavigate(dx < 0 ? 1 : -1);
-    } else if (!touchMoved) {
-      // Reiner Tap → schließen
-      overlay.classList.add('hidden');
+      // Swipe weit genug → kurz weiterfliegen, dann nächste Karte
+      const flyX = dx > 0 ? 120 : -120;
+      inner.style.transform = `translateX(${flyX}px) rotate(${flyX * 0.018}deg)`;
+      setTimeout(() => {
+        inner.style.transition = 'none';
+        inner.style.transform  = `translateX(${-flyX * 0.6}px)`;
+        detailNavigate(dx < 0 ? 1 : -1);
+        requestAnimationFrame(() => {
+          inner.style.transition = 'transform 0.25s ease';
+          inner.style.transform  = '';
+        });
+      }, 180);
+    } else {
+      // Nicht weit genug → zurückfedern
+      inner.style.transform = '';
+      if (!touchMoved) overlay.classList.add('hidden');
     }
   }, { passive: true });
 
