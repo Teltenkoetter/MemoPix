@@ -359,13 +359,11 @@ function fillKarteDetail(s) {
   const notizEl = document.getElementById('karte-detail-notiz');
   if (s.notiz) { notizEl.textContent = s.notiz; notizEl.classList.remove('hidden'); }
   else { notizEl.classList.add('hidden'); }
-  // Zähler aktualisieren
-  document.getElementById('karte-detail-counter').textContent =
-    detailIds.length > 1 ? `${detailIndex + 1} / ${detailIds.length}` : '';
+  const counterEl = document.getElementById('karte-detail-counter');
+  if (counterEl) counterEl.textContent = detailIds.length > 1 ? `${detailIndex + 1} / ${detailIds.length}` : '';
 }
 
 function openKarteDetailOverlay(id) {
-  // Reihenfolge aus aktuell sichtbaren Karten-Items aufbauen
   detailIds = [...document.querySelectorAll('.karte-detail-trigger.karte-name')].map(el => el.dataset.id);
   if (!detailIds.length) detailIds = [id];
   detailIndex = detailIds.indexOf(id);
@@ -378,27 +376,30 @@ function openKarteDetailOverlay(id) {
   const overlay = document.getElementById('karte-detail-overlay');
   overlay.classList.remove('hidden');
 
-  // Swipe-Hinweis: nur anzeigen wenn mehrere Karten & noch nie gesehen
   const hint = document.getElementById('karte-detail-swipe-hint');
-  if (detailIds.length > 1 && !localStorage.getItem('swipeHintSeen')) {
-    hint.classList.remove('hidden');
-    setTimeout(() => {
-      hint.classList.add('fade-out');
-      setTimeout(() => { hint.classList.add('hidden'); hint.classList.remove('fade-out'); }, 500);
-    }, 2000);
-    localStorage.setItem('swipeHintSeen', '1');
-  } else {
-    hint.classList.add('hidden');
+  if (hint) {
+    if (detailIds.length > 1 && !localStorage.getItem('swipeHintSeen')) {
+      hint.classList.remove('hidden');
+      setTimeout(() => {
+        hint.classList.add('fade-out');
+        setTimeout(() => { hint.classList.add('hidden'); hint.classList.remove('fade-out'); }, 500);
+      }, 2000);
+      localStorage.setItem('swipeHintSeen', '1');
+    } else {
+      hint.classList.add('hidden');
+    }
   }
 }
 
 function detailNavigate(dir) {
+  if (!detailIds.length) return;
   const next = detailIndex + dir;
   if (next < 0 || next >= detailIds.length) return;
   detailIndex = next;
   const s = studenten.find(x => x.id === detailIds[detailIndex]);
   if (s) fillKarteDetail(s);
 }
+
 
 function karteItemHtml(s) {
   const isText = s.modus === 'text';
@@ -1417,22 +1418,25 @@ document.getElementById('karten-nach-gruppen').addEventListener('click', e => {
   }
 });
 
-// Overlay: Swipe + Tap-zum-Schließen
+// Overlay: Swipe-Navigation + Tippen zum Schließen
 (function() {
   const overlay = document.getElementById('karte-detail-overlay');
   let touchStartX = 0, touchStartY = 0, touchMoved = false;
 
   overlay.addEventListener('touchstart', e => {
+    if (!e.touches.length) return;
     touchStartX = e.touches[0].clientX;
     touchStartY = e.touches[0].clientY;
     touchMoved  = false;
   }, { passive: true });
 
   overlay.addEventListener('touchmove', e => {
+    if (!e.touches.length) return;
     if (Math.abs(e.touches[0].clientX - touchStartX) > 8) touchMoved = true;
   }, { passive: true });
 
   overlay.addEventListener('touchend', e => {
+    if (!e.changedTouches.length) return;
     const dx = e.changedTouches[0].clientX - touchStartX;
     const dy = e.changedTouches[0].clientY - touchStartY;
     if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) * 1.5) {
@@ -1442,8 +1446,7 @@ document.getElementById('karten-nach-gruppen').addEventListener('click', e => {
     }
   }, { passive: true });
 
-  // Maus-Klick zum Schließen (Desktop-Fallback)
-  overlay.addEventListener('click', e => {
+  overlay.addEventListener('click', () => {
     if (!('ontouchstart' in window)) overlay.classList.add('hidden');
   });
 })();
