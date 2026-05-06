@@ -395,9 +395,37 @@ function detailNavigate(dir) {
   if (!detailIds.length) return;
   const next = detailIndex + dir;
   if (next < 0 || next >= detailIds.length) return;
-  detailIndex = next;
-  const s = studenten.find(x => x.id === detailIds[detailIndex]);
-  if (s) fillKarteDetail(s);
+
+  const inner = document.querySelector('.karte-detail-inner');
+  if (!inner) {
+    detailIndex = next;
+    const s = studenten.find(x => x.id === detailIds[detailIndex]);
+    if (s) fillKarteDetail(s);
+    return;
+  }
+
+  // Ausblenden + verschieben (Richtung der Wischbewegung)
+  inner.style.transition = 'opacity 0.12s ease, transform 0.12s ease';
+  inner.style.opacity    = '0';
+  inner.style.transform  = `translateX(${dir > 0 ? '-40px' : '40px'})`;
+
+  setTimeout(() => {
+    detailIndex = next;
+    const s = studenten.find(x => x.id === detailIds[detailIndex]);
+    if (s) fillKarteDetail(s);
+
+    // Sofort auf Gegenseite setzen (ohne Transition)
+    inner.style.transition = 'none';
+    inner.style.transform  = `translateX(${dir > 0 ? '40px' : '-40px'})`;
+    inner.style.opacity    = '0';
+
+    // Einblenden (zwei RAFs damit Browser die Reset-Position gerendert hat)
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      inner.style.transition = 'opacity 0.12s ease, transform 0.12s ease';
+      inner.style.opacity    = '1';
+      inner.style.transform  = 'translateX(0)';
+    }));
+  }, 120);
 }
 
 
