@@ -421,6 +421,12 @@ function karteItemHtml(s) {
 }
 
 function renderVerwaltung() {
+  const scrollY = window.scrollY;
+  _renderVerwaltung();
+  requestAnimationFrame(() => window.scrollTo(0, scrollY));
+}
+
+function _renderVerwaltung() {
   const sortierteSammlungen = getSortierteSammlungen();
 
   // ── Badges ───────────────────────────────────────────
@@ -489,6 +495,7 @@ function renderVerwaltung() {
           <span class="gruppe-karten-title-text">${esc(g.name)}</span>
           <span class="gruppe-karten-count">${gCount} Karte${gCount !== 1 ? 'n' : ''}</span>
           <div class="gruppe-mgmt-btns">
+            <button class="btn-gruppe-add-karte" data-gid="${g.id}" title="Karte hinzufügen">＋</button>
             <button class="btn-gruppe-move" data-id="${g.id}" data-dir="up" data-sid="${sam.id}"${gi === 0 ? ' disabled' : ''}>▲</button>
             <button class="btn-gruppe-move" data-id="${g.id}" data-dir="down" data-sid="${sam.id}"${gi === gs.length - 1 ? ' disabled' : ''}>▼</button>
             <button class="btn-gruppe-move-sammlung" data-id="${g.id}" title="Sammlung wechseln">📁</button>
@@ -1234,6 +1241,18 @@ document.getElementById('sammlungen-liste').addEventListener('click', async e =>
     renderVerwaltung();
     return;
   }
+  // Karte inline hinzufügen (＋ am Gruppen-Header)
+  const addKarteBtn = e.target.closest('.btn-gruppe-add-karte');
+  if (addKarteBtn) {
+    const gid = addKarteBtn.dataset.gid;
+    const sel = document.getElementById('select-gruppe');
+    sel.value = gid;
+    localStorage.setItem('lastGruppeId', gid);
+    document.getElementById('form-karte').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    setTimeout(() => document.getElementById('input-name').focus(), 400);
+    return;
+  }
+
   // Gruppe aufklappen / zuklappen
   const gruppeHeader = e.target.closest('.gruppe-karten-header');
   if (gruppeHeader && !e.target.closest('button')) {
@@ -2034,36 +2053,42 @@ async function erstelleTutorialGruppeWennNeu() {
     {
       id: 'tut-3', name: 'Sammlungen · Gruppen · Karten',
       svg: `<svg viewBox="0 0 360 480" xmlns="http://www.w3.org/2000/svg"><rect width="360" height="480" fill="#111"/>
-        <!-- Ebene 1: Sammlung -->
-        <rect x="40" y="55" width="280" height="32" rx="8" fill="#1e1e28" stroke="#333" stroke-width="1"/>
-        <text x="58" y="76" font-family="-apple-system,sans-serif" font-size="11" fill="#888">📂 Hochschule</text>
-        <!-- Ebene 2: Gruppen -->
-        <rect x="60" y="102" width="120" height="28" rx="6" fill="#252530" stroke="#333" stroke-width="1"/>
-        <text x="74" y="120" font-family="-apple-system,sans-serif" font-size="10" fill="#999">Biologie Kap. 3</text>
-        <rect x="195" y="102" width="105" height="28" rx="6" fill="#252530" stroke="#333" stroke-width="1"/>
-        <text x="209" y="120" font-family="-apple-system,sans-serif" font-size="10" fill="#999">Anatomie</text>
-        <!-- Verbindungslinien -->
-        <line x1="180" y1="87" x2="120" y2="102" stroke="#333" stroke-width="1"/>
-        <line x1="180" y1="87" x2="247" y2="102" stroke="#333" stroke-width="1"/>
-        <!-- Ebene 3: Karten -->
-        <rect x="60" y="146" width="52" height="66" rx="6" fill="#1a1a1a" stroke="#2a2a2a" stroke-width="1"/>
-        <circle cx="86" cy="166" r="12" fill="#333"/>
-        <rect x="68" y="182" width="36" height="22" rx="3" fill="#2a2a2a"/>
-        <rect x="122" y="146" width="52" height="66" rx="6" fill="#1a1a1a" stroke="#2a2a2a" stroke-width="1"/>
-        <circle cx="148" cy="166" r="12" fill="#333"/>
-        <rect x="130" y="182" width="36" height="22" rx="3" fill="#2a2a2a"/>
-        <!-- Pfeil 📁 -->
-        <text x="245" y="175" font-family="-apple-system,sans-serif" font-size="22" fill="#555">📁</text>
-        <text x="242" y="198" font-family="-apple-system,sans-serif" font-size="9" fill="#444">verschieben</text>
-        <line x1="30" y1="232" x2="330" y2="232" stroke="#222" stroke-width="1"/>
-        <text x="180" y="258" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="12" font-weight="700" fill="#f0f0f0">3 Ebenen:</text>
-        <text x="180" y="280" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="11" fill="#aaa">Sammlung → Gruppe → Karte</text>
-        <text x="180" y="306" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="11" fill="#aaa">VERWALTUNG → Sammlung anlegen</text>
-        <text x="180" y="324" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="11" fill="#aaa">→ Gruppe → 📷 Foto oder 📖 Text</text>
-        <text x="180" y="352" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="11" fill="#666">📁 verschiebt eine Gruppe in</text>
-        <text x="180" y="370" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="11" fill="#666">eine andere Sammlung.</text>
-        <text x="180" y="396" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="11" fill="#555">Im Lernen: Sammlungen auf-/</text>
-        <text x="180" y="414" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="11" fill="#555">zuklappen per Antippen.</text>
+        <!-- Sammlung Header -->
+        <rect x="30" y="44" width="300" height="30" rx="7" fill="#1e1e28" stroke="#4a4a6a" stroke-width="1"/>
+        <text x="46" y="64" font-family="-apple-system,sans-serif" font-size="10" fill="#ccc" font-weight="700">▼</text>
+        <text x="62" y="64" font-family="-apple-system,sans-serif" font-size="11" fill="#eee" font-weight="700">Hochschule</text>
+        <text x="230" y="64" font-family="-apple-system,sans-serif" font-size="9" fill="#666">2 Gr. · 4 K.</text>
+        <!-- Gruppe 1 Header -->
+        <rect x="46" y="86" width="268" height="26" rx="5" fill="#222230" stroke="#333" stroke-width="1"/>
+        <text x="60" y="103" font-family="-apple-system,sans-serif" font-size="9" fill="#888">▼</text>
+        <text x="73" y="103" font-family="-apple-system,sans-serif" font-size="10" fill="#bbb" font-weight="700">BIOLOGIE KAP. 3</text>
+        <text x="218" y="103" font-family="-apple-system,sans-serif" font-size="9" fill="#555">2 K.</text>
+        <rect x="244" y="90" width="16" height="16" rx="4" fill="#2a3a2a"/>
+        <text x="248" y="102" font-family="-apple-system,sans-serif" font-size="11" fill="#4a9" font-weight="700">＋</text>
+        <text x="264" y="103" font-family="-apple-system,sans-serif" font-size="9" fill="#555">✏️ ✕</text>
+        <!-- Karten in Gruppe 1 -->
+        <rect x="62" y="122" width="48" height="60" rx="5" fill="#1a1a1a" stroke="#2a2a2a" stroke-width="1"/>
+        <circle cx="86" cy="140" r="11" fill="#2e2e2e"/>
+        <rect x="69" y="156" width="34" height="18" rx="3" fill="#252525"/>
+        <rect x="116" y="122" width="48" height="60" rx="5" fill="#1a1a1a" stroke="#2a2a2a" stroke-width="1"/>
+        <circle cx="140" cy="140" r="11" fill="#2e2e2e"/>
+        <rect x="123" y="156" width="34" height="18" rx="3" fill="#252525"/>
+        <!-- Gruppe 2 Header (closed) -->
+        <rect x="46" y="194" width="268" height="26" rx="5" fill="#1e1e1e" stroke="#2a2a2a" stroke-width="1"/>
+        <text x="60" y="211" font-family="-apple-system,sans-serif" font-size="9" fill="#555">▶</text>
+        <text x="73" y="211" font-family="-apple-system,sans-serif" font-size="10" fill="#777" font-weight="700">ANATOMIE</text>
+        <text x="218" y="211" font-family="-apple-system,sans-serif" font-size="9" fill="#444">2 K.</text>
+        <rect x="244" y="198" width="16" height="16" rx="4" fill="#2a3a2a"/>
+        <text x="248" y="210" font-family="-apple-system,sans-serif" font-size="11" fill="#4a9" font-weight="700">＋</text>
+        <text x="264" y="211" font-family="-apple-system,sans-serif" font-size="9" fill="#444">✏️ ✕</text>
+        <line x1="30" y1="234" x2="330" y2="234" stroke="#222" stroke-width="1"/>
+        <text x="180" y="258" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="12" font-weight="700" fill="#f0f0f0">3 Ebenen — alles in einer Ansicht</text>
+        <text x="180" y="280" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="11" fill="#aaa">▶/▼ Sammlung &amp; Gruppe auf-/zuklappen</text>
+        <text x="180" y="300" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="11" fill="#aaa">＋ am Gruppen-Header → Karte direkt</text>
+        <text x="180" y="318" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="11" fill="#aaa">in diese Gruppe hinzufügen</text>
+        <text x="180" y="344" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="11" fill="#666">📁 verschiebt Gruppe in andere Sammlung</text>
+        <text x="180" y="368" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="11" fill="#555">Kartennamen antippen → Großansicht</text>
+        <text x="180" y="386" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="11" fill="#555">links/rechts wischen zum Blättern</text>
       </svg>`
     },
     {
@@ -2076,7 +2101,7 @@ async function erstelleTutorialGruppeWennNeu() {
     },
     {
       id: 'tut-6', name: 'Jetzt loslegen! 🎉',
-      svg: `<svg viewBox="0 0 360 480" xmlns="http://www.w3.org/2000/svg"><rect width="360" height="480" fill="#111"/><circle cx="180" cy="150" r="80" fill="#1a1a1a" stroke="#2a2a2a" stroke-width="2"/><circle cx="180" cy="150" r="65" fill="#161616"/><polyline points="145,150 168,175 218,122" fill="none" stroke="#4caf50" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/><circle cx="90" cy="80" r="5" fill="#4caf50" opacity="0.5"/><circle cx="270" cy="70" r="4" fill="#cc4444" opacity="0.5"/><circle cx="60" cy="190" r="3" fill="#fff" opacity="0.3"/><circle cx="300" cy="200" r="5" fill="#4caf50" opacity="0.4"/><line x1="30" y1="252" x2="330" y2="252" stroke="#222" stroke-width="1"/><text x="180" y="278" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="13" font-weight="700" fill="#f0f0f0">Bereit! 🎉</text><text x="180" y="302" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="11" fill="#aaa">Tutorial löschen: VERWALTUNG →</text><text x="180" y="320" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="11" fill="#aaa">Sammlung 🎓 Tutorial → ✕</text><text x="180" y="346" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="11" fill="#666">Karten-Namen antippen →</text><text x="180" y="364" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="11" fill="#666">Großansicht + links/rechts wischen</text><text x="180" y="390" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="11" fill="#555">Backups unter SICHERUNG!</text><text x="180" y="416" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="10" fill="#444">Daten bleiben lokal im Browser.</text></svg>`
+      svg: `<svg viewBox="0 0 360 480" xmlns="http://www.w3.org/2000/svg"><rect width="360" height="480" fill="#111"/><circle cx="180" cy="130" r="70" fill="#1a1a1a" stroke="#2a2a2a" stroke-width="2"/><circle cx="180" cy="130" r="56" fill="#161616"/><polyline points="150,130 170,152 214,104" fill="none" stroke="#4caf50" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/><circle cx="90" cy="64" r="5" fill="#4caf50" opacity="0.5"/><circle cx="270" cy="56" r="4" fill="#cc4444" opacity="0.5"/><circle cx="60" cy="170" r="3" fill="#fff" opacity="0.3"/><circle cx="300" cy="178" r="5" fill="#4caf50" opacity="0.4"/><line x1="30" y1="222" x2="330" y2="222" stroke="#222" stroke-width="1"/><text x="180" y="248" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="13" font-weight="700" fill="#f0f0f0">Bereit! 🎉</text><text x="180" y="272" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="11" fill="#aaa">Tutorial löschen: VERWALTUNG →</text><text x="180" y="290" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="11" fill="#aaa">Sammlung 🎓 Tutorial → ✕</text><text x="180" y="314" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="11" fill="#777">＋ am Gruppen-Header → Karte</text><text x="180" y="332" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="11" fill="#777">direkt in diese Gruppe hinzufügen</text><text x="180" y="356" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="11" fill="#666">Kartennamen antippen → Großansicht</text><text x="180" y="374" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="11" fill="#666">links/rechts wischen zum Blättern</text><text x="180" y="398" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="11" fill="#555">Regelmäßig unter SICHERUNG exportieren!</text><text x="180" y="420" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="10" fill="#444">Daten bleiben lokal im Browser.</text></svg>`
     }
   ];
 
