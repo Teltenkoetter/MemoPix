@@ -423,80 +423,11 @@ function karteItemHtml(s) {
 function renderVerwaltung() {
   const sortierteSammlungen = getSortierteSammlungen();
 
-  // ── Sammlungen + Gruppen ──────────────────────────────
-  const sammlListEl  = document.getElementById('sammlungen-liste');
-  const keinHinweis  = document.getElementById('keine-sammlungen-hinweis');
+  // ── Badges ───────────────────────────────────────────
   document.getElementById('sammlungen-badge').textContent = sammlungen.length;
+  document.getElementById('karten-gesamt').textContent    = studenten.length;
 
-  if (!sortierteSammlungen.length) {
-    sammlListEl.innerHTML = '';
-    keinHinweis.classList.remove('hidden');
-  } else {
-    keinHinweis.classList.add('hidden');
-    sammlListEl.innerHTML = sortierteSammlungen.map((sam, si) => {
-      const gs    = getSortierteGruppenInSammlung(sam.id);
-      const isOpen = openSammlungen.has(sam.id);
-      const kCount = sammlungKartenAnzahl(sam.id);
-      return `
-        <div class="sammlung-section">
-          <div class="sammlung-header" data-sid="${sam.id}">
-            <span class="sammlung-toggle-icon">${isOpen ? '▼' : '▶'}</span>
-            <span class="sammlung-name-text">${esc(sam.name)}</span>
-            <span class="sammlung-count">${gs.length} Gr. · ${kCount} K.</span>
-            <div class="sammlung-btns">
-              <button class="btn-sammlung-move" data-id="${sam.id}" data-dir="up"${si === 0 ? ' disabled' : ''}>▲</button>
-              <button class="btn-sammlung-move" data-id="${sam.id}" data-dir="down"${si === sortierteSammlungen.length - 1 ? ' disabled' : ''}>▼</button>
-              <button class="btn-sammlung-ren" data-id="${sam.id}">✏️</button>
-              <button class="btn-sammlung-del" data-id="${sam.id}">✕</button>
-            </div>
-          </div>
-          <div class="sammlung-body${isOpen ? '' : ' hidden'}" id="sammlung-body-${sam.id}">
-            ${gs.map((g, gi) => `
-              <div class="gruppe-item">
-                <span class="gruppe-dot"></span>
-                <span class="gruppe-name">${esc(g.name)}</span>
-                <span class="gruppe-count">${gruppeKartenAnzahl(g.id)} K.</span>
-                <button class="btn-gruppe-move" data-id="${g.id}" data-dir="up" data-sid="${sam.id}"${gi === 0 ? ' disabled' : ''}>▲</button>
-                <button class="btn-gruppe-move" data-id="${g.id}" data-dir="down" data-sid="${sam.id}"${gi === gs.length - 1 ? ' disabled' : ''}>▼</button>
-                <button class="btn-gruppe-move-sammlung" data-id="${g.id}" title="Sammlung wechseln">📁</button>
-                <button class="btn-gruppe-ren" data-id="${g.id}">✏️</button>
-                <button class="btn-gruppe-del" data-id="${g.id}">✕</button>
-              </div>`).join('')}
-            <div class="neue-gruppe-row">
-              <input type="text" class="input-neue-gruppe-sammlung" data-sid="${sam.id}" placeholder="Neue Gruppe…" maxlength="60">
-              <button class="btn-gruppe-add-sammlung btn-icon" data-sid="${sam.id}">+</button>
-            </div>
-          </div>
-        </div>`;
-    }).join('');
-
-    // ── Orphan-Gruppen: "Ohne Sammlung" Abschnitt ────────
-    const orphanGs = gruppen.filter(g => !g.sammlungId || !sammlungen.find(s => s.id === g.sammlungId));
-    if (orphanGs.length) {
-      sammlListEl.innerHTML += `
-        <div class="sammlung-section sammlung-section--orphan">
-          <div class="sammlung-header" data-sid="__orphan__">
-            <span class="sammlung-toggle-icon">${openSammlungen.has('__orphan__') ? '▼' : '▶'}</span>
-            <span class="sammlung-name-text" style="opacity:.65">Ohne Sammlung</span>
-            <span class="sammlung-count">${orphanGs.length} Gr.</span>
-            <div class="sammlung-btns"></div>
-          </div>
-          <div class="sammlung-body${openSammlungen.has('__orphan__') ? '' : ' hidden'}" id="sammlung-body-__orphan__">
-            ${orphanGs.map(g => `
-              <div class="gruppe-item">
-                <span class="gruppe-dot"></span>
-                <span class="gruppe-name">${esc(g.name)}</span>
-                <span class="gruppe-count">${gruppeKartenAnzahl(g.id)} K.</span>
-                <button class="btn-gruppe-move-sammlung" data-id="${g.id}" title="Sammlung zuweisen">📁</button>
-                <button class="btn-gruppe-ren" data-id="${g.id}">✏️</button>
-                <button class="btn-gruppe-del" data-id="${g.id}">✕</button>
-              </div>`).join('')}
-          </div>
-        </div>`;
-    }
-  }
-
-  // ── Gruppe-Select mit Optgroups ───────────────────────
+  // ── Gruppe-Select ────────────────────────────────────
   const sel     = document.getElementById('select-gruppe');
   const savedId = localStorage.getItem('lastGruppeId') || sel.value;
   sel.innerHTML = '<option value="">Gruppe wählen…</option>' +
@@ -508,26 +439,19 @@ function renderVerwaltung() {
         `</optgroup>`;
     }).join('');
 
-  // ── Alle Karten ───────────────────────────────────────
-  const container = document.getElementById('karten-nach-gruppen');
-  const hinweis   = document.getElementById('keine-karten-hinweis');
-  document.getElementById('karten-gesamt').textContent = studenten.length;
+  const container        = document.getElementById('sammlungen-liste');
+  const keinSammlHinweis = document.getElementById('keine-sammlungen-hinweis');
+  const keinKarteHinweis = document.getElementById('keine-karten-hinweis');
+  const toggleBtn        = document.getElementById('btn-toggle-alle-gruppen');
+  const suche            = (document.getElementById('input-karten-suche')?.value || '').trim().toLowerCase();
+  const sort             = document.getElementById('select-karten-sort')?.value || 'neu';
 
-  if (studenten.length === 0) {
-    container.innerHTML = '';
-    hinweis.classList.remove('hidden');
-    return;
-  }
-  hinweis.classList.add('hidden');
-
-  const gefiltert = getGefilterteStudenten();
-  const suche     = (document.getElementById('input-karten-suche')?.value || '').trim();
-  const sort      = document.getElementById('select-karten-sort')?.value || 'neu';
-  const flach     = suche || sort === 'az' || sort === 'za';
-  const toggleBtn = document.getElementById('btn-toggle-alle-gruppen');
-
-  if (flach) {
+  // ── FLAT MODE: Suche oder alphabetisch ───────────────
+  if (suche || sort === 'az' || sort === 'za') {
     if (toggleBtn) toggleBtn.style.visibility = 'hidden';
+    keinSammlHinweis.classList.add('hidden');
+    const gefiltert = getGefilterteStudenten();
+    keinKarteHinweis.classList.toggle('hidden', gefiltert.length > 0);
     container.innerHTML = gefiltert.length
       ? gefiltert.map(s => karteItemHtml(s)).join('')
       : '<p class="hinweis" style="padding:0.5rem 0">Keine Karten gefunden.</p>';
@@ -536,62 +460,113 @@ function renderVerwaltung() {
 
   if (toggleBtn) toggleBtn.style.visibility = 'visible';
 
-  const sortiertGruppen = sort === 'gruppe'
-    ? [...gruppen].sort((a, b) => a.name.localeCompare(b.name, 'de'))
-    : getSortierteGruppen();
+  // ── Leer-Hinweis ─────────────────────────────────────
+  if (!sortierteSammlungen.length && !studenten.length) {
+    container.innerHTML = '';
+    keinSammlHinweis.classList.remove('hidden');
+    keinKarteHinweis.classList.add('hidden');
+    if (toggleBtn) toggleBtn.textContent = 'Alle öffnen';
+    return;
+  }
+  keinSammlHinweis.classList.add('hidden');
+  keinKarteHinweis.classList.add('hidden');
 
-  const byGruppe = new Map();
-  sortiertGruppen.forEach(g => byGruppe.set(g.id, []));
-  const ohneGruppe = [];
-  gefiltert.forEach(s => {
-    if (byGruppe.has(s.gruppeId)) byGruppe.get(s.gruppeId).push(s);
-    else ohneGruppe.push(s);
+  // ── HIERARCHICAL MODE ────────────────────────────────
+  let html = '';
+
+  sortierteSammlungen.forEach((sam, si) => {
+    const gs     = getSortierteGruppenInSammlung(sam.id);
+    const isOpen = openSammlungen.has(sam.id);
+    const kCount = sammlungKartenAnzahl(sam.id);
+
+    const gruppenHtml = gs.map((g, gi) => {
+      const kartenInGruppe = studenten.filter(s => s.gruppeId === g.id);
+      const isGroupOpen    = openGruppen.has(g.id);
+      const gCount         = kartenInGruppe.length;
+      return `<div class="gruppe-karten-section">
+        <div class="gruppe-karten-header" data-gid="${g.id}">
+          <span class="gruppe-toggle-arrow">${isGroupOpen ? '▼' : '▶'}</span>
+          <span class="gruppe-karten-title-text">${esc(g.name)}</span>
+          <span class="gruppe-karten-count">${gCount} Karte${gCount !== 1 ? 'n' : ''}</span>
+          <div class="gruppe-mgmt-btns">
+            <button class="btn-gruppe-move" data-id="${g.id}" data-dir="up" data-sid="${sam.id}"${gi === 0 ? ' disabled' : ''}>▲</button>
+            <button class="btn-gruppe-move" data-id="${g.id}" data-dir="down" data-sid="${sam.id}"${gi === gs.length - 1 ? ' disabled' : ''}>▼</button>
+            <button class="btn-gruppe-move-sammlung" data-id="${g.id}" title="Sammlung wechseln">📁</button>
+            <button class="btn-gruppe-ren" data-id="${g.id}">✏️</button>
+            <button class="btn-gruppe-del" data-id="${g.id}">✕</button>
+          </div>
+        </div>
+        <div id="gruppe-body-${g.id}" class="gruppe-karten-body${isGroupOpen ? '' : ' hidden'}">
+          ${kartenInGruppe.map(s => karteItemHtml(s)).join('')}
+        </div>
+      </div>`;
+    }).join('');
+
+    html += `<div class="sammlung-section">
+      <div class="sammlung-header" data-sid="${sam.id}">
+        <span class="sammlung-toggle-icon">${isOpen ? '▼' : '▶'}</span>
+        <span class="sammlung-name-text">${esc(sam.name)}</span>
+        <span class="sammlung-count">${gs.length} Gr. · ${kCount} K.</span>
+        <div class="sammlung-btns">
+          <button class="btn-sammlung-move" data-id="${sam.id}" data-dir="up"${si === 0 ? ' disabled' : ''}>▲</button>
+          <button class="btn-sammlung-move" data-id="${sam.id}" data-dir="down"${si === sortierteSammlungen.length - 1 ? ' disabled' : ''}>▼</button>
+          <button class="btn-sammlung-ren" data-id="${sam.id}">✏️</button>
+          <button class="btn-sammlung-del" data-id="${sam.id}">✕</button>
+        </div>
+      </div>
+      <div class="sammlung-body${isOpen ? '' : ' hidden'}" id="sammlung-body-${sam.id}">
+        ${gruppenHtml}
+        <div class="neue-gruppe-row">
+          <input type="text" class="input-neue-gruppe-sammlung" data-sid="${sam.id}" placeholder="Neue Gruppe…" maxlength="60">
+          <button class="btn-gruppe-add-sammlung btn-icon" data-sid="${sam.id}">+</button>
+        </div>
+      </div>
+    </div>`;
   });
 
-  function gruppeSection(gid, name, arr) {
-    const isOpen = openGruppen.has(gid);
-    return `<div class="gruppe-karten-section">
-      <div class="gruppe-karten-header" data-gid="${gid}">
-        <span class="gruppe-toggle-arrow">${isOpen ? '▼' : '▶'}</span>
-        <span class="gruppe-karten-title-text">${esc(name)}</span>
-        <span class="gruppe-karten-count">${arr.length} Karte${arr.length !== 1 ? 'n' : ''}</span>
+  // ── Orphan-Gruppen ───────────────────────────────────
+  const orphanGs = gruppen.filter(g => !g.sammlungId || !sammlungen.find(s => s.id === g.sammlungId));
+  if (orphanGs.length) {
+    const isOpen = openSammlungen.has('__orphan__');
+    const orphanGruppenHtml = orphanGs.map((g, gi) => {
+      const kartenInGruppe = studenten.filter(s => s.gruppeId === g.id);
+      const isGroupOpen    = openGruppen.has(g.id);
+      const gCount         = kartenInGruppe.length;
+      return `<div class="gruppe-karten-section">
+        <div class="gruppe-karten-header" data-gid="${g.id}">
+          <span class="gruppe-toggle-arrow">${isGroupOpen ? '▼' : '▶'}</span>
+          <span class="gruppe-karten-title-text">${esc(g.name)}</span>
+          <span class="gruppe-karten-count">${gCount} Karte${gCount !== 1 ? 'n' : ''}</span>
+          <div class="gruppe-mgmt-btns">
+            <button class="btn-gruppe-move-sammlung" data-id="${g.id}" title="Sammlung zuweisen">📁</button>
+            <button class="btn-gruppe-ren" data-id="${g.id}">✏️</button>
+            <button class="btn-gruppe-del" data-id="${g.id}">✕</button>
+          </div>
+        </div>
+        <div id="gruppe-body-${g.id}" class="gruppe-karten-body${isGroupOpen ? '' : ' hidden'}">
+          ${kartenInGruppe.map(s => karteItemHtml(s)).join('')}
+        </div>
+      </div>`;
+    }).join('');
+
+    html += `<div class="sammlung-section sammlung-section--orphan">
+      <div class="sammlung-header" data-sid="__orphan__">
+        <span class="sammlung-toggle-icon">${isOpen ? '▼' : '▶'}</span>
+        <span class="sammlung-name-text" style="opacity:.65">Ohne Sammlung</span>
+        <span class="sammlung-count">${orphanGs.length} Gr.</span>
+        <div class="sammlung-btns"></div>
       </div>
-      <div id="gruppe-body-${gid}" class="gruppe-karten-body${isOpen ? '' : ' hidden'}">
-        ${arr.map(s => karteItemHtml(s)).join('')}
+      <div class="sammlung-body${isOpen ? '' : ' hidden'}" id="sammlung-body-__orphan__">
+        ${orphanGruppenHtml}
       </div>
     </div>`;
   }
 
-  let html = '';
-  if (sort !== 'gruppe') {
-    // Sammlung-Trennlinien einfügen
-    sortierteSammlungen.forEach(sam => {
-      const gs = getSortierteGruppenInSammlung(sam.id)
-        .filter(g => (byGruppe.get(g.id) || []).length > 0);
-      if (!gs.length) return;
-      html += `<div class="karten-sammlung-header">${esc(sam.name)}</div>`;
-      gs.forEach(g => html += gruppeSection(g.id, g.name, byGruppe.get(g.id)));
-    });
-    // Orphan-Gruppen
-    const orphans = sortiertGruppen.filter(g =>
-      !g.sammlungId || !sammlungen.find(s => s.id === g.sammlungId));
-    orphans.forEach(g => {
-      const arr = byGruppe.get(g.id);
-      if (arr && arr.length) html += gruppeSection(g.id, g.name, arr);
-    });
-  } else {
-    sortiertGruppen.forEach(g => {
-      const arr = byGruppe.get(g.id);
-      if (arr && arr.length) html += gruppeSection(g.id, g.name, arr);
-    });
-  }
-  if (ohneGruppe.length) html += gruppeSection('ohne', 'Ohne Gruppe', ohneGruppe);
+  container.innerHTML = html || '<p class="hinweis" style="padding:0.5rem 0">Keine Inhalte vorhanden.</p>';
 
-  container.innerHTML = html || '<p class="hinweis" style="padding:0.5rem 0">Keine Karten gefunden.</p>';
-
+  // ── Toggle-Button Text ────────────────────────────────
   if (toggleBtn) {
-    const anyOpen = sortiertGruppen.some(g => byGruppe.get(g.id)?.length && openGruppen.has(g.id))
-                 || (ohneGruppe.length && openGruppen.has('ohne'));
+    const anyOpen = sortierteSammlungen.some(s => openSammlungen.has(s.id)) || openSammlungen.has('__orphan__');
     toggleBtn.textContent = anyOpen ? 'Alle schließen' : 'Alle öffnen';
   }
 }
@@ -1259,6 +1234,47 @@ document.getElementById('sammlungen-liste').addEventListener('click', async e =>
     renderVerwaltung();
     return;
   }
+  // Gruppe aufklappen / zuklappen
+  const gruppeHeader = e.target.closest('.gruppe-karten-header');
+  if (gruppeHeader && !e.target.closest('button')) {
+    const gid   = gruppeHeader.dataset.gid;
+    const body  = document.getElementById(`gruppe-body-${gid}`);
+    const arrow = gruppeHeader.querySelector('.gruppe-toggle-arrow');
+    if (openGruppen.has(gid)) {
+      openGruppen.delete(gid);
+      body?.classList.add('hidden');
+      if (arrow) arrow.textContent = '▶';
+    } else {
+      openGruppen.add(gid);
+      body?.classList.remove('hidden');
+      if (arrow) arrow.textContent = '▼';
+    }
+    saveOpenGruppen();
+    return;
+  }
+  // Karte Detail-Overlay öffnen
+  const detailTrigger = e.target.closest('.karte-detail-trigger');
+  if (detailTrigger && !e.target.closest('button')) {
+    openKarteDetailOverlay(detailTrigger.dataset.id);
+    return;
+  }
+  // Karte bearbeiten / kopieren / löschen
+  const karteRenBtn  = e.target.closest('.btn-karte-ren');
+  if (karteRenBtn)  { openKarteEditModal(karteRenBtn.dataset.id, 'edit'); return; }
+  const karteCopyBtn = e.target.closest('.btn-karte-copy');
+  if (karteCopyBtn) { openKarteEditModal(karteCopyBtn.dataset.id, 'copy'); return; }
+  const karteDelBtn  = e.target.closest('.btn-karte-del');
+  if (karteDelBtn) {
+    const id = karteDelBtn.dataset.id;
+    const s  = studenten.find(x => x.id === id);
+    if (!confirm(`Karte „${s.name}" löschen?`)) return;
+    await dbDelete('studenten', id);
+    revokeUrl(id);
+    studenten = studenten.filter(x => x.id !== id);
+    renderVerwaltung();
+    toast('Karte gelöscht');
+    return;
+  }
   // Sammlung verschieben
   const sammlMoveBtn = e.target.closest('.btn-sammlung-move');
   if (sammlMoveBtn && !sammlMoveBtn.disabled) {
@@ -1381,6 +1397,26 @@ document.getElementById('sammlungen-liste').addEventListener('keydown', async e 
   if (inp) await addGruppeInSammlung(inp.dataset.sid, inp);
 });
 
+// Foto tauschen (per Klick aufs Thumbnail, jetzt in sammlungen-liste)
+document.getElementById('sammlungen-liste').addEventListener('change', async e => {
+  const fotoInput = e.target.closest('.karte-foto-input');
+  if (!fotoInput) return;
+  const file = fotoInput.files[0];
+  if (!file) return;
+  const id = fotoInput.dataset.id;
+  const s  = studenten.find(x => x.id === id);
+  try {
+    const blob = await compressPhoto(file);
+    revokeUrl(id);
+    s.foto = blob;
+    await dbPut('studenten', s);
+    renderVerwaltung();
+    toast('Foto aktualisiert');
+  } catch (err) {
+    toast('Fehler: ' + err.message);
+  }
+});
+
 // Gruppe verschieben – Modal
 document.getElementById('btn-gruppe-verschieben-close').addEventListener('click', () => {
   document.getElementById('gruppe-verschieben-modal').classList.add('hidden');
@@ -1476,15 +1512,6 @@ document.getElementById('form-karte').addEventListener('submit', async e => {
   }
 });
 
-// Gruppe aufklappen / zuklappen
-// Karte Detail Overlay öffnen (Thumbnail oder Kartenname)
-document.getElementById('karten-nach-gruppen').addEventListener('click', e => {
-  const trigger = e.target.closest('.karte-detail-trigger');
-  if (trigger && !e.target.closest('button')) {
-    openKarteDetailOverlay(trigger.dataset.id);
-    return;
-  }
-});
 
 // Overlay: Swipe-Navigation + Tippen zum Schließen
 (function() {
@@ -1519,79 +1546,20 @@ document.getElementById('karten-nach-gruppen').addEventListener('click', e => {
   });
 })();
 
-document.getElementById('karten-nach-gruppen').addEventListener('click', e => {
-  const header = e.target.closest('.gruppe-karten-header');
-  if (!header) return;
-  // Wenn ein Button innerhalb des Headers geklickt wurde, ignorieren
-  if (e.target.closest('button')) return;
-  const gid  = header.dataset.gid;
-  const body = document.getElementById(`gruppe-body-${gid}`);
-  const arrow = header.querySelector('.gruppe-toggle-arrow');
-  if (openGruppen.has(gid)) {
-    openGruppen.delete(gid);
-    body.classList.add('hidden');
-    arrow.textContent = '▶';
-  } else {
-    openGruppen.add(gid);
-    body.classList.remove('hidden');
-    arrow.textContent = '▼';
-  }
-  saveOpenGruppen();
-  // Toggle-Button-Text aktualisieren
-  const anyOpen = [...openGruppen].some(id => document.getElementById(`gruppe-body-${id}`));
-  const tb = document.getElementById('btn-toggle-alle-gruppen');
-  if (tb) tb.textContent = anyOpen ? 'Alle schließen' : 'Alle öffnen';
-});
 
 // Alle öffnen / schließen
 document.getElementById('btn-toggle-alle-gruppen').addEventListener('click', () => {
-  const anyOpen = gruppen.some(g => openGruppen.has(g.id)) || openGruppen.has('ohne');
+  const sortierteSammlungen = getSortierteSammlungen();
+  const anyOpen = sortierteSammlungen.some(s => openSammlungen.has(s.id)) || openSammlungen.has('__orphan__');
   if (anyOpen) {
-    openGruppen.clear();
+    openSammlungen.clear();
   } else {
-    gruppen.forEach(g => openGruppen.add(g.id));
-    openGruppen.add('ohne');
+    sortierteSammlungen.forEach(s => openSammlungen.add(s.id));
+    const orphanGs = gruppen.filter(g => !g.sammlungId || !sammlungen.find(s => s.id === g.sammlungId));
+    if (orphanGs.length) openSammlungen.add('__orphan__');
   }
-  saveOpenGruppen();
+  saveOpenSammlungen();
   renderVerwaltung();
-});
-
-// Karte bearbeiten / kopieren / löschen
-document.getElementById('karten-nach-gruppen').addEventListener('click', async e => {
-  const renBtn  = e.target.closest('.btn-karte-ren');
-  if (renBtn)  { openKarteEditModal(renBtn.dataset.id, 'edit'); return; }
-  const copyBtn = e.target.closest('.btn-karte-copy');
-  if (copyBtn) { openKarteEditModal(copyBtn.dataset.id, 'copy'); return; }
-  const delBtn  = e.target.closest('.btn-karte-del');
-  if (!delBtn) return;
-  const id = delBtn.dataset.id;
-  const s  = studenten.find(x => x.id === id);
-  if (!confirm(`Karte „${s.name}" löschen?`)) return;
-  await dbDelete('studenten', id);
-  revokeUrl(id);
-  studenten = studenten.filter(x => x.id !== id);
-  renderVerwaltung();
-  toast('Karte gelöscht');
-});
-
-// Foto tauschen (per Klick aufs Thumbnail)
-document.getElementById('karten-nach-gruppen').addEventListener('change', async e => {
-  const fotoInput = e.target.closest('.karte-foto-input');
-  if (!fotoInput) return;
-  const file = fotoInput.files[0];
-  if (!file) return;
-  const id = fotoInput.dataset.id;
-  const s  = studenten.find(x => x.id === id);
-  try {
-    const blob = await compressPhoto(file);
-    revokeUrl(id);
-    s.foto = blob;
-    await dbPut('studenten', s);
-    renderVerwaltung();
-    toast('Foto aktualisiert');
-  } catch (err) {
-    toast('Fehler: ' + err.message);
-  }
 });
 
 // Suchen + Sortieren

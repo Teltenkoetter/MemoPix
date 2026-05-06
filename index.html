@@ -246,20 +246,8 @@
 
       <div class="card">
         <div class="card-header">
-          <h2>Sammlungen &amp; Gruppen</h2>
+          <h2>Sammlungen</h2>
           <span id="sammlungen-badge" class="badge">0</span>
-        </div>
-        <div class="input-row" style="margin-bottom:0.75rem">
-          <input type="text" id="input-neue-sammlung" placeholder="Neue Sammlung…" maxlength="60">
-          <button id="btn-sammlung-add" class="btn-icon" title="Sammlung hinzufügen">+</button>
-        </div>
-        <div id="sammlungen-liste"></div>
-        <p id="keine-sammlungen-hinweis" class="hinweis hidden">Noch keine Sammlungen. Bitte eine Sammlung anlegen.</p>
-      </div>
-
-      <div class="card">
-        <div class="card-header">
-          <h2>Alle Karten</h2>
           <span id="karten-gesamt" class="badge">0</span>
           <button id="btn-toggle-alle-gruppen" class="btn-gruppen-toggle">Alle öffnen</button>
         </div>
@@ -272,8 +260,13 @@
             <option value="gruppe">Nach Gruppe</option>
           </select>
         </div>
-        <div id="karten-nach-gruppen"></div>
-        <p id="keine-karten-hinweis" class="hinweis">Noch keine Karten vorhanden.</p>
+        <div class="input-row" style="margin-bottom:0.75rem">
+          <input type="text" id="input-neue-sammlung" placeholder="Neue Sammlung…" maxlength="60">
+          <button id="btn-sammlung-add" class="btn-icon" title="Sammlung hinzufügen">+</button>
+        </div>
+        <div id="sammlungen-liste"></div>
+        <p id="keine-sammlungen-hinweis" class="hinweis hidden">Noch keine Sammlungen. Bitte eine Sammlung anlegen.</p>
+        <p id="keine-karten-hinweis" class="hinweis hidden">Noch keine Karten vorhanden.</p>
       </div>
 
       <div class="card">
@@ -551,6 +544,6 @@
   </div>
 
   <div id="toast" class="toast hidden"></div>
-  <script src="app.js?v=47"></script>
+  <script src="app.js?v=48"></script>
 </body>
 </html>
