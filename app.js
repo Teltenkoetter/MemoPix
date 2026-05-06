@@ -1134,9 +1134,10 @@ function karteEditSetModus(isFoto) {
   if (isFoto) {
     const vorderseite = document.getElementById('karte-edit-vorderseite').value.trim();
     if (vorderseite) {
-      const notizEl = document.getElementById('karte-edit-notiz');
-      const notiz   = notizEl.value.trim();
-      notizEl.value = notiz ? `${notiz} · ${vorderseite}` : vorderseite;
+      const notizEl  = document.getElementById('karte-edit-notiz');
+      const notiz    = notizEl.value.trim();
+      const vsFlat   = vorderseite.split('\n').map(z => z.trim()).filter(z => z).join(' · ');
+      notizEl.value  = notiz ? `${notiz} · ${vsFlat}` : vsFlat;
     }
   }
   document.getElementById('karte-edit-chip-foto').classList.toggle('active', isFoto);
