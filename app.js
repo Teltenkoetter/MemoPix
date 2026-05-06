@@ -1130,6 +1130,15 @@ document.getElementById('info-modal').addEventListener('click', e => {
 
 // Karte-Edit-Modal – Typ-Chips
 function karteEditSetModus(isFoto) {
+  // Vorderseite-Text sichern bevor Feld verschwindet
+  if (isFoto) {
+    const vorderseite = document.getElementById('karte-edit-vorderseite').value.trim();
+    if (vorderseite) {
+      const notizEl = document.getElementById('karte-edit-notiz');
+      const notiz   = notizEl.value.trim();
+      notizEl.value = notiz ? `${notiz} · ${vorderseite}` : vorderseite;
+    }
+  }
   document.getElementById('karte-edit-chip-foto').classList.toggle('active', isFoto);
   document.getElementById('karte-edit-chip-text').classList.toggle('active', !isFoto);
   document.getElementById('karte-edit-name-label').textContent = isFoto ? 'Name' : 'Begriff';
